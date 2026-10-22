@@ -2,7 +2,7 @@
 
 ## Decisão
 
-Usar Better Auth 1.7.12 com adapter Drizzle/PostgreSQL para login por e-mail e senha. A biblioteca gerencia hashes, cookies, sessões e proteções CSRF. Contas locais atendem ao acesso simples solicitado; a configuração central permite acrescentar OIDC/SSO depois. Cadastro público está desativado. Não há envio de e-mail ou administração web nesta etapa.
+Usar Better Auth 1.7.12 com adapter Drizzle/PostgreSQL para login por e-mail e senha. A biblioteca gerencia hashes, cookies, sessões e proteções CSRF. A configuração central permite acrescentar OIDC/SSO depois. Cadastro público está desativado. Administradores gerenciam servidores em `/admin/users`; os próprios usuários podem alterar senha em `/account`. Não há envio de senhas por e-mail.
 
 ## Ambiente e banco
 
@@ -38,7 +38,7 @@ $credential = Get-Credential -Message 'E-mail e senha da nova conta'
 Remove-Variable credential
 ```
 
-Papéis `viewer` e `admin` possuem apenas `panel:read` nesta etapa. Não há concessão de acesso a CPF, CNPJ ou fontes externas, nem funcionalidades administrativas web. Papéis e permissões desconhecidos são negados.
+O papel `viewer` acessa somente painel e conta. `operator` consulta CPF/CNPJ no Infoconv, processa lotes e exporta resultados próprios. `admin` também acessa auditoria global, atualiza dados diretamente no SERPRO e gerencia servidores e domínios. Papéis e permissões desconhecidos são negados; todas as verificações ocorrem no servidor. A lista de permissões fica em `modules/auth/permissions.ts`. O último administrador ativo não pode ser desativado ou rebaixado pelo painel.
 
 Na instalação local desta tarefa foi criada a conta fictícia `admin@pinda.local`, com senha aleatória em `.local/login-inicial.json`. O arquivo está ignorado pelo Git e Docker. Use somente para desenvolvimento e exclua-o depois de guardar a senha em local protegido. Novas instalações não criam contas automaticamente.
 
@@ -63,7 +63,7 @@ As operações revogam todas as sessões em transação e geram auditoria. Redef
 
 - Proxy verifica sessão no servidor em todas as rotas internas. O controller da página também exige `panel:read`; novos controllers devem exigir a permissão correspondente. APIs retornam 401/403; páginas redirecionam para `/login`. Falhas não liberam acesso.
 - Cookie `HttpOnly`, `SameSite=Lax` e `Secure` em produção. Sessão com duração máxima de 8 horas, sem renovação ou cache em cookie. Logout revoga a sessão no banco.
-- POST de autenticação exige `Origin` igual à origem configurada; as proteções CSRF da biblioteca permanecem ativas. O controller expõe apenas login, logout e leitura de sessão.
+- POST de autenticação exige `Origin` igual à origem configurada; as proteções CSRF da biblioteca permanecem ativas. O controller expõe login, logout, leitura de sessão e troca de senha autenticada. A troca exige a senha atual e revoga as demais sessões.
 - Limites persistidos em PostgreSQL: 5 tentativas por minuto por IP no login e 60 requisições por minuto nos demais endpoints de autenticação. O proxy de produção deve sobrescrever `X-Real-IP` e impedir acesso direto ao app; nunca confiar nesse cabeçalho enviado pelo cliente. IPs compartilhados compartilham limites.
 - Auditoria registra criação da conta, entrada, saída, desativação e redefinição de senha, com usuário, horário UTC e correlação. Não registra senha, token nem resposta cadastral. Não há interface pública de auditoria. Logs técnicos usam eventos fixos sem argumentos sensíveis do SDK.
 - Defina retenção, acesso à auditoria e política institucional de contas antes de produção.

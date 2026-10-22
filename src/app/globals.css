@@ -1,5 +1,249 @@
 @import "../shared/styles/tokens.css";
 
+.panel-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding-block: 24px;
+}
+.product-brand {
+  white-space: nowrap;
+  color: var(--color-secondary-blue);
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.product-brand span {
+  color: var(--color-primary-green-dark);
+}
+.panel-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding-block: 16px;
+  border-block: 1px solid var(--color-border-light);
+}
+.panel-nav a,
+.external-link {
+  color: var(--color-secondary-blue);
+  text-underline-offset: 5px;
+  font-size: 0.875rem;
+}
+.panel-main {
+  padding-block: 40px 64px;
+  min-height: 65vh;
+}
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 32px;
+}
+.page-heading h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin-block: 12px 16px;
+  letter-spacing: -0.04em;
+}
+.page-heading .status {
+  white-space: nowrap;
+}
+.consultation-form {
+  border-top: 2px solid var(--color-secondary-blue);
+  padding: 24px;
+  background: var(--color-white);
+  margin-bottom: 24px;
+}
+.panel-main fieldset {
+  border: 0;
+  margin: 0 0 24px;
+  padding: 0;
+  min-width: 0;
+}
+.panel-main legend {
+  font-weight: 700;
+  color: var(--color-secondary-blue);
+  margin-bottom: 16px;
+}
+.panel-main label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+.panel-main input:not([type="checkbox"]),
+.panel-main select,
+.panel-main textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--color-text-dark);
+  background: var(--color-white);
+  border: 1px solid var(--color-secondary-blue);
+  border-radius: 2px;
+}
+.panel-main textarea {
+  resize: vertical;
+}
+.panel-main input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-secondary-blue);
+}
+.panel-main .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 400;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+.form-actions,
+.results-toolbar,
+.result-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.form-actions {
+  justify-content: start;
+}
+.results-toolbar > div {
+  display: flex;
+  gap: 12px;
+}
+.result-record {
+  margin-top: 32px;
+  padding-block: 24px;
+  border-top: 2px solid var(--color-secondary-blue);
+}
+.result-heading h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--color-secondary-blue);
+}
+.result-origin,
+.correlation {
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.result-origin {
+  margin-block: 12px 24px;
+}
+.result-record summary {
+  cursor: pointer;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: var(--color-secondary-blue);
+}
+.result-record tbody th {
+  width: 35%;
+}
+.society-table {
+  min-width: 760px;
+}
+.external-link {
+  display: inline-block;
+  margin-block: 20px;
+}
+.narrow-form {
+  max-width: 640px;
+}
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--color-secondary-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.usage-summary {
+  margin-bottom: 32px;
+}
+.panel-main progress {
+  width: 100%;
+  accent-color: var(--color-primary-green-dark);
+}
+.panel-main td {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-heading {
+    flex-direction: column;
+  }
+  .panel-bar {
+    align-items: start;
+  }
+  .panel-nav {
+    gap: 16px;
+  }
+  .consultation-form {
+    padding: 20px;
+  }
+  .results-toolbar > div {
+    flex-wrap: wrap;
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: var(--color-white);
+  }
+  .panel-nav,
+  .session-controls,
+  .skip-link,
+  .consultation-form,
+  .results-toolbar button,
+  .panel-main > label,
+  .panel-main > input,
+  .panel-main > .form-error,
+  .panel-main progress,
+  .external-link {
+    display: none !important;
+  }
+  .container {
+    width: 100%;
+  }
+  .panel-main {
+    padding-block: 16px;
+  }
+  .table-container {
+    overflow: visible;
+  }
+  th,
+  td {
+    padding: 6px;
+    font-size: 10pt;
+  }
+  tr {
+    break-inside: avoid;
+  }
+  details > * {
+    display: block;
+  }
+  details summary {
+    display: none;
+  }
+  .result-record {
+    break-before: auto;
+  }
+}
+
 .login-layout {
   display: grid;
   grid-template-columns: 1.2fr 1fr;

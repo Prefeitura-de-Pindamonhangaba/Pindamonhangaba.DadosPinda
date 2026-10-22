@@ -82,6 +82,13 @@ export function createAuthService(
           },
         },
       },
+      account: {
+        update: {
+          after: async (data) => {
+            await audit.record(data.userId, "user.credentials_updated");
+          },
+        },
+      },
     },
     logger: {
       level: "error",

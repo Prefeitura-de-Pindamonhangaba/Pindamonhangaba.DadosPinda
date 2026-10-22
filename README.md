@@ -2,7 +2,7 @@
 
 Plataforma interna da Prefeitura Municipal de Pindamonhangaba, mantida pela SETIP / DSI.
 
-Monólito MVC modular em Next.js App Router, TypeScript strict e Bun. Login individual por e-mail e senha, sessões em PostgreSQL e área interna protegida. Consultas cadastrais ainda não estão disponíveis.
+Monólito MVC modular em Next.js App Router, TypeScript strict e Bun. Login individual, consultas Infoconv de CPF/CNPJ, lotes TXT, cache criptografado por 7 dias, auditoria e administração de acessos.
 
 ## Desenvolvimento
 
@@ -15,6 +15,8 @@ bun install --frozen-lockfile
 docker compose -f compose.yml -f compose.dev.yml up -d db
 bun run db:migrate
 # Provisione uma conta conforme docs/autenticacao.md.
+# Para Infoconv, configure as variáveis e certificados em docs/infoconv.md.
+bun run references:seed --actor-id UUID_DO_ADMINISTRADOR
 bun run dev
 ```
 
@@ -28,4 +30,4 @@ bun run build
 bun run format:check
 ```
 
-Consulte [autenticação e contas](docs/autenticacao.md), [arquitetura](docs/arquitetura.md) e [configuração e operação](docs/operacao.md).
+Consulte [integração Infoconv e paridade com o legado](docs/infoconv.md), [autenticação e contas](docs/autenticacao.md), [arquitetura](docs/arquitetura.md) e [configuração e operação](docs/operacao.md).

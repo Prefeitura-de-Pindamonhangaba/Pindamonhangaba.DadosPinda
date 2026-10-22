@@ -8,6 +8,7 @@ export const auditEvent = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id),
+    actorId: uuid("actor_id").references(() => user.id),
     action: text("action").notNull(),
     correlationId: uuid("correlation_id").notNull().defaultRandom(),
     createdAt: timestamp("created_at", { withTimezone: true })

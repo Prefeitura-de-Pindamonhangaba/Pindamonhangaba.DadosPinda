@@ -15,5 +15,5 @@ export const provisionUserSchema = z.object({
     .max(254)
     .transform((value) => value.toLowerCase()),
   password: z.string().min(12).max(128),
-  role: z.enum(["viewer", "admin"]).default("viewer"),
+  role: z.enum(["viewer", "operator", "admin"]).default("viewer"),
 });
