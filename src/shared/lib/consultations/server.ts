@@ -16,6 +16,22 @@ import type { ConsultationResult } from "@/modules/consultations/models/consulta
 import { signResult } from "@/modules/consultations/services/result-proof";
 import { authorizeDisclosure } from "@/modules/consultations/services/disclosure-service";
 import { createAuditRepository } from "@/modules/audit/models/audit-repository";
+import { createQuotaRepository } from "@/modules/consultations/models/quota-repository";
+import {
+  approveQuota,
+  readQuota,
+} from "@/modules/consultations/services/quota-service";
+
+export async function getMonthlyQuota(principal: Principal) {
+  return readQuota(
+    createQuotaRepository(getDatabase()),
+    principal,
+    parseInfoconvEnvironment(process.env).INFOCONV_MONTHLY_LIMIT,
+  );
+}
+export async function setMonthlyQuota(principal: Principal, input: unknown) {
+  await approveQuota(createQuotaRepository(getDatabase()), principal, input);
+}
 
 export async function runConsultation(
   principal: Principal,

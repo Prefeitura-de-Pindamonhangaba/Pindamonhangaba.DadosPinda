@@ -24,6 +24,8 @@ import { parseInfoconvEnvironment } from "../src/modules/data-sources/infoconv/e
 import { withDocumentLock } from "../src/modules/consultations/models/consultation-repository";
 import { consultDocument } from "../src/modules/consultations/services/consultation-service";
 import { consultationSchema } from "../src/modules/consultations/schemas/consultation-schema";
+import { quotaApproval } from "../src/modules/consultations/models/quota-schema";
+import { currentQuotaMonth } from "../src/modules/consultations/services/quota-policy";
 import type { Role } from "../src/modules/auth/permissions";
 
 const databaseUrl = process.env.AUTH_TEST_DATABASE_URL!;
@@ -73,6 +75,7 @@ test.beforeAll(async () => {
   await migrate(db, { migrationsFolder: "./drizzle" });
   await db.delete(consultationCache);
   await db.delete(consultationAudit);
+  await db.delete(quotaApproval);
   for (const role of ["viewer", "operator", "admin"] as const) {
     const email = `e2e-infoconv-${runId}-${role}@example.org`;
     const created = await provisionUser(createUserRepository(db), {
@@ -100,6 +103,7 @@ test.afterAll(async () => {
     .where(like(user.email, `e2e-infoconv-${runId}%`));
   const ids = createdUsers.map((item) => item.id);
   if (ids.length) {
+    await db.delete(quotaApproval).where(inArray(quotaApproval.actorId, ids));
     await db
       .delete(consultationAudit)
       .where(inArray(consultationAudit.userId, ids));
@@ -218,7 +222,9 @@ test("cache criptografado é reutilizado sem chamar o adapter de teste", async (
   ).toBe(403);
 });
 
-test("consultas concorrentes compartilham cache e limite mensal mantém cache acessível", async () => {
+test("consultas concorrentes compartilham cache e excedente exige liberação finita e auditada", async ({
+  request,
+}) => {
   const principal = {
     id: users.admin.id,
     name: "Administrador fictício",
@@ -273,6 +279,135 @@ test("consultas concorrentes compartilham cache e limite mensal mantém cache ac
     ),
   ).rejects.toThrow("monthly_limit");
   expect(calls).toBe(1);
+  await login(request);
+  const approval = {
+    month: currentQuotaMonth(),
+    additional: 1,
+    reason: "Liberação fictícia para teste de cobrança",
+    acknowledgeAdditionalCharge: true,
+  };
+  expect(
+    (
+      await request.post("/api/consultations/quota", {
+        headers: { origin },
+        data: approval,
+      })
+    ).status(),
+  ).toBe(403);
+  await request.post("/api/auth/sign-out", { headers: { origin }, data: {} });
+  await login(request, "admin");
+  expect(
+    (
+      await request.post("/api/consultations/quota", {
+        headers: { origin },
+        data: { ...approval, acknowledgeAdditionalCharge: false },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await request.post("/api/consultations/quota", {
+        headers: { origin: "https://externo.example.org" },
+        data: approval,
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await request.post("/api/consultations/quota", {
+        headers: { origin },
+        data: { ...approval, month: "2000-01" },
+      })
+    ).status(),
+  ).toBe(409);
+  const approved = await request.post("/api/consultations/quota", {
+    headers: { origin },
+    data: approval,
+  });
+  expect(approved.status()).toBe(200);
+  expect((await approved.json()).included).toBe(10000);
+  cacheKeys.push(`cpf:${otherKey}`);
+  expect(
+    (
+      await withDocumentLock(db, otherKey, (repository) =>
+        consultDocument(repository, adapter, limited, principal, otherInput),
+      )
+    ).origin,
+  ).toBe("serpro");
+  await expect(
+    withDocumentLock(db, otherKey, (repository) =>
+      consultDocument(repository, adapter, limited, principal, {
+        ...otherInput,
+        forceRefresh: true,
+      }),
+    ),
+  ).rejects.toThrow("monthly_limit");
+  expect(calls).toBe(2);
+  expect(
+    (
+      await request.post("/api/consultations/quota", {
+        headers: { origin },
+        data: { ...approval, additional: 0 },
+      })
+    ).status(),
+  ).toBe(200);
+  expect(
+    (
+      await withDocumentLock(db, otherKey, (repository) =>
+        consultDocument(repository, adapter, limited, principal, otherInput),
+      )
+    ).origin,
+  ).toBe("cache");
+  const [event] = await db
+    .select()
+    .from(auditEvent)
+    .where(eq(auditEvent.action, "infoconv.quota_approved"));
+  expect(event.actorId).toBe(users.admin.id);
+});
+
+test("administrador registra e revoga excedente com ciência de cobrança na interface", async ({
+  page,
+}) => {
+  await login(page.request, "admin");
+  await page.goto("/consultations/audit");
+  await expect(
+    page.getByRole("heading", { name: /Franquia e liberação de excedente/ }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Total de consultas extras autorizado no mês", { exact: true })
+    .fill("25");
+  await page
+    .getByLabel("Justificativa da liberação ou revogação", { exact: true })
+    .fill("Liberação fictícia de excedente no navegador");
+  await page
+    .getByRole("checkbox", { name: /Estou ciente da cobrança adicional/ })
+    .check();
+  await page
+    .getByRole("button", { name: "Registrar liberação mensal", exact: true })
+    .click();
+  await expect(
+    page.getByText("Liberação mensal atualizada e registrada na auditoria.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByText(/Teto deste mês: 10.025/)).toBeVisible();
+  await page.screenshot({
+    path: ".local/infoconv-quota-preview.png",
+    fullPage: true,
+  });
+  await page
+    .getByLabel("Total de consultas extras autorizado no mês", { exact: true })
+    .fill("0");
+  await page
+    .getByLabel("Justificativa da liberação ou revogação", { exact: true })
+    .fill("Revogação fictícia após validar o formulário");
+  await page
+    .getByRole("checkbox", { name: /Estou ciente da cobrança adicional/ })
+    .check();
+  await page
+    .getByRole("button", { name: "Registrar liberação mensal", exact: true })
+    .click();
+  await expect(page.getByText(/Teto deste mês: 10.000/)).toBeVisible();
 });
 
 test("lote TXT, erros por item e exportação funcionam no navegador", async ({

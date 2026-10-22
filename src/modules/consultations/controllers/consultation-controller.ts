@@ -43,7 +43,7 @@ export async function postConsultation(request: Request) {
             error.code === "forbidden"
               ? "Acesso não autorizado."
               : error.code === "monthly_limit"
-                ? "Limite mensal configurado atingido. Procure o administrador. Dados válidos na base local continuam disponíveis."
+                ? "Teto mensal autorizado atingido. Novas chamadas exigem liberação administrativa em Auditoria de consultas, pois há cobrança adicional. Dados válidos na base local continuam disponíveis."
                 : "Limite de consultas atingido. Aguarde antes de continuar.",
         },
         error.code === "forbidden" ? 403 : 429,

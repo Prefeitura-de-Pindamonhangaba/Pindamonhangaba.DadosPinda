@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { QuotaView } from "./quota-view";
 
 type AuditRow = {
   id: string;
@@ -58,6 +59,7 @@ export function AuditView() {
           </p>
         </div>
       </div>
+      <QuotaView />
       {usage.length > 0 && (
         <section className="usage-summary">
           <h2>Uso no mês atual · UTC</h2>

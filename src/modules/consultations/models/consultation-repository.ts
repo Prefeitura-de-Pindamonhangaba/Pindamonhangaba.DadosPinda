@@ -1,6 +1,8 @@
 import { and, desc, eq, gt, gte, inArray, lt, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { consultationAudit, consultationCache } from "./consultation-schema";
+import { currentQuotaMonth } from "../services/quota-policy";
+import { readAdditionalAllowance } from "./quota-repository";
 import { ConsultationError } from "./consultation-types";
 
 type Executor = Pick<
@@ -89,7 +91,13 @@ export function createConsultationRepository(database: Executor) {
               ),
             );
           if (
-            (monthlyLimit && usage.total >= monthlyLimit) ||
+            (monthlyLimit &&
+              usage.total >=
+                monthlyLimit +
+                  (await readAdditionalAllowance(
+                    database,
+                    currentQuotaMonth(),
+                  ))) ||
             (kindMonthlyLimit && usage.kind >= kindMonthlyLimit)
           )
             throw new ConsultationError("monthly_limit");

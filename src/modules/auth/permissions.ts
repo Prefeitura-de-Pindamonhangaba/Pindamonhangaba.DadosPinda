@@ -1,4 +1,5 @@
 export type Permission =
+  | "consultations:quota:manage"
   | "panel:read"
   | "consultations:read"
   | "consultations:cpf"
@@ -24,6 +25,7 @@ const rolePermissions: Record<Role, readonly Permission[]> = {
     "sources:infoconv",
   ],
   admin: [
+    "consultations:quota:manage",
     "panel:read",
     "consultations:read",
     "consultations:cpf",

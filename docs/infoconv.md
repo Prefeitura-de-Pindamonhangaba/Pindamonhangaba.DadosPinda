@@ -30,13 +30,15 @@ As configurações hard coded usadas pela integração foram transferidas para o
 | `INFOCONV_AUDIT_KEY`              | Chave HMAC independente, no mesmo formato                                                                        |
 | `INFOCONV_TIMEOUT_MS`             | Timeout de transporte; padrão 15 segundos                                                                        |
 | `INFOCONV_REQUESTS_PER_MINUTE`    | Limite global da aplicação; padrão conservador de 30 tentativas/minuto                                           |
-| `INFOCONV_MONTHLY_LIMIT`          | Teto mensal global, se definido no contrato                                                                      |
+| `INFOCONV_MONTHLY_LIMIT`          | Franquia mensal conjunta CPF/CNPJ: 10.000, conforme contrato informado                                           |
 | `INFOCONV_MONTHLY_LIMIT_CPF`      | Teto mensal específico de CPF, se houver                                                                         |
 | `INFOCONV_MONTHLY_LIMIT_CNPJ`     | Teto mensal específico de CNPJ, se houver                                                                        |
 | `INFOCONV_CERTIFICATE_HOST_PATH`  | Arquivo PEM no host Docker                                                                                       |
 | `INFOCONV_CA_HOST_PATH`           | Cadeia de CAs no host Docker                                                                                     |
 
-Não há valor mensal presumido: os campos mensais permanecem vazios até a informação do contrato. Os contadores cobrem tentativas desta aplicação, inclusive falhas cujo faturamento não pode ser determinado localmente. Não incluem consumo do legado ou de outros sistemas; use o extrato do SERPRO para controlar o saldo compartilhado do contrato. Configure tetos locais considerando esse saldo, especialmente no mês da migração.
+A franquia informada é de **10.000 consultas mensais**, compartilhadas entre CPF e CNPJ. Ao atingir a franquia, novas chamadas ao SERPRO ficam bloqueadas até um administrador registrar uma liberação em **Auditoria de consultas → Franquia e liberação de excedente**. É necessário informar o total de consultas extras autorizado para o mês, uma justificativa e confirmar ciência da cobrança adicional. A liberação não é cumulativa: informar 200 substitui o total extra anterior por 200. Zero revoga o excedente para novas chamadas, sem desfazer chamadas já realizadas. O histórico preserva responsável, data, mês, quantidade e justificativa. A autorização expira automaticamente no mês seguinte; o cache válido continua acessível mesmo após atingir o teto.
+
+A contagem utiliza mês civil UTC e é compartilhada entre instâncias por bloqueio transacional. Os contadores cobrem tentativas desta aplicação, inclusive falhas cujo faturamento não pode ser determinado localmente. Não incluem consumo do legado ou de outros sistemas; use o extrato do SERPRO para controlar o saldo compartilhado do contrato. Configure a franquia local considerando esse saldo, especialmente no mês da migração.
 
 Gere as duas chaves de forma independente com `randomBytes(32).toString('hex')`, salvando diretamente no gerenciador de segredos ou `.env`, sem imprimir. A troca da chave de cache exige invalidar as entradas antigas; a chave HMAC deve ser preservada para manter a correlação de identificadores da auditoria. Não exponha essas variáveis com `NEXT_PUBLIC_`.
 
@@ -96,7 +98,7 @@ Exportações e impressões exigem permissão no servidor e são auditadas. Os r
 
 ## Banco e deploy
 
-As migrações `0001_panoramic_gargoyle.sql` e `0002_clean_big_bertha.sql` acrescentam cache, auditoria de consultas, domínios, papel `operator`, identificação do ator em alterações administrativas e constraint que limita a retenção a sete dias. Migrações anteriores foram preservadas. Faça backup antes de aplicar:
+As migrações `0001_panoramic_gargoyle.sql`, `0002_clean_big_bertha.sql` e `0003_wandering_emma_frost.sql` acrescentam cache, auditoria de consultas, domínios, papel `operator`, identificação do ator em alterações administrativas e constraint que limita a retenção a sete dias e histórico de liberações de excedente mensal. Migrações anteriores foram preservadas. Faça backup antes de aplicar:
 
 ```sh
 bun install --frozen-lockfile

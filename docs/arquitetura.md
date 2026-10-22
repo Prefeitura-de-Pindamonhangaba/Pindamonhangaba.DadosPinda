@@ -27,3 +27,7 @@ Essa decisão reduz consumo, mas significa que o resultado pode refletir a data 
 ## Identidade visual
 
 Tokens copiados da [referência oficial](https://dsiapp.pindamonhangaba.sp.gov.br/paleta-prefeitura/), consultada em 22/10/2026 via HTTPS. Incluem as cores institucionais e os neutros definidos na referência. A interface prioriza azul para textos, verde para marca e amarelo para sinalização; fonte de sistema para evitar dependência de serviços externos durante build e navegação.
+
+## Controle de excedente contratado
+
+A franquia conjunta de 10.000 chamadas mensais é bloqueada por padrão. Liberações administrativas de quantidade extra são registros imutáveis por mês UTC, com justificativa, responsável e ciência explícita da cobrança adicional. A liberação mais recente substitui o total extra anterior, inclusive zero para revogação. O mesmo lock transacional global serializa liberações e reservas de consultas. No mês seguinte não há saldo extra herdado. Cache não consome franquia.

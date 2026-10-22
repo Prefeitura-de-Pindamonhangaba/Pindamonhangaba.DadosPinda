@@ -15,7 +15,7 @@ const officialWsdl = z.url().refine((value) => {
 const schema = z.object({
   INFOCONV_MONTHLY_LIMIT: z.preprocess(
     (value) => (value === "" ? undefined : value),
-    z.coerce.number().int().positive().optional(),
+    z.coerce.number().int().positive().default(10000),
   ),
   INFOCONV_MONTHLY_LIMIT_CPF: z.preprocess(
     (value) => (value === "" ? undefined : value),
