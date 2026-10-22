@@ -1,0 +1,15 @@
+/* Referência: https://dsiapp.pindamonhangaba.sp.gov.br/paleta-prefeitura/ (22/10/2026). */
+:root {
+  --color-primary-green-dark: #008b3c;
+  --color-primary-green-light: #009845;
+  --color-secondary-blue: #123d67;
+  --color-secondary-red: #ce1619;
+  --color-accent-yellow: #f6af04;
+  --color-accent-orange: #d78f05;
+  --color-white: #ffffff;
+  --color-light-blue: #9fced3;
+  --color-text-dark: #2c3e50;
+  --color-text-light: #f8f8f8;
+  --color-border-light: #dcdcdc;
+  --color-background-page: #f5f7f9;
+}

@@ -1,0 +1,7 @@
+node_modules
+.next
+.next-e2e
+.local
+bun.lock
+drizzle/meta
+AGENTS.md

@@ -1,0 +1,43 @@
+{
+  "name": "pinda-dados",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "users:create": "bun scripts/create-user.ts",
+    "users:manage": "bun scripts/manage-user.ts",
+    "test:e2e": "bunx playwright test",
+    "dev": "NODE_ENV=development bun --bun next dev --webpack",
+    "build": "NODE_ENV=production bun --bun next build",
+    "start": "NODE_ENV=production bun --bun next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:migrate": "bunx drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.12",
+    "better-auth": "^1.7.12",
+    "drizzle-orm": "^0.45.4",
+    "next": "^16.4.2",
+    "postgres": "^3.4.9",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/bun": "^1.4.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "9",
+    "eslint-config-next": "^16.4.2",
+    "prettier": "^3.9.10",
+    "typescript": "5.9.3"
+  }
+}

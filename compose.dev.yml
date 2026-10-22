@@ -1,0 +1,8 @@
+# Banco local para desenvolvimento com bun run dev; não utilizar em produção.
+services:
+  db:
+    ports:
+      - "127.0.0.1:55432:5432"
+networks:
+  database:
+    internal: false
