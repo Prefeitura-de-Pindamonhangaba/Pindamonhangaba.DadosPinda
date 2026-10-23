@@ -487,6 +487,12 @@ test("CNPJ exibe CNAE e quadro societário", async ({ page }) => {
     path: ".local/infoconv-mobile-preview.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });
 
 test("administração de servidores e domínios registra alterações e respeita vínculos", async ({

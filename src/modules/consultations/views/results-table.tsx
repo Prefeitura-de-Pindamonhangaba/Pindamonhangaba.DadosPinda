@@ -18,7 +18,9 @@ export function ResultsTable({ results }: { results: ConsultationResult[] }) {
               {result.kind.toUpperCase()}{" "}
               {formatField(result.document, result.kind.toUpperCase())}
             </h3>
-            <span className="status">{statusLabels[result.status]}</span>
+            <span className="status" data-status={result.status}>
+              {statusLabels[result.status]}
+            </span>
           </div>
           <p className="result-origin">
             {originLabels[result.origin]} · Obtido em{" "}

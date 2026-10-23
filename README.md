@@ -31,3 +31,5 @@ bun run format:check
 ```
 
 Consulte [integração Infoconv e paridade com o legado](docs/infoconv.md), [autenticação e contas](docs/autenticacao.md), [arquitetura](docs/arquitetura.md) e [configuração e operação](docs/operacao.md).
+
+A [referência inicial de identidade visual](docs/identidade-visual.md) registra os papéis da paleta oficial, componentes institucionais e orientações para manter coerência entre sistemas municipais.

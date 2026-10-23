@@ -12,4 +12,51 @@
   --color-text-light: #f8f8f8;
   --color-border-light: #dcdcdc;
   --color-background-page: #f5f7f9;
+
+  /* Papéis semânticos: utilizar estes tokens nos componentes novos. */
+  --color-brand: var(--color-secondary-blue);
+  --color-brand-accent: var(--color-primary-green-dark);
+  --color-on-brand: var(--color-white);
+  --color-action: var(--color-secondary-blue);
+  --color-action-hover: color-mix(
+    in srgb,
+    var(--color-secondary-blue) 88%,
+    var(--color-text-dark)
+  );
+  --color-surface: var(--color-white);
+  --color-surface-info: color-mix(
+    in srgb,
+    var(--color-light-blue) 22%,
+    var(--color-white)
+  );
+  --color-surface-success: color-mix(
+    in srgb,
+    var(--color-primary-green-light) 10%,
+    var(--color-white)
+  );
+  --color-surface-warning: color-mix(
+    in srgb,
+    var(--color-accent-yellow) 18%,
+    var(--color-white)
+  );
+  --color-surface-danger: color-mix(
+    in srgb,
+    var(--color-secondary-red) 7%,
+    var(--color-white)
+  );
+  --color-focus: var(--color-secondary-blue);
+  --color-control-border: color-mix(
+    in srgb,
+    var(--color-secondary-blue) 58%,
+    var(--color-white)
+  );
+  --font-family-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+  --color-shadow: color-mix(
+    in srgb,
+    var(--color-secondary-blue) 9%,
+    transparent
+  );
+  --radius-control: 6px;
+  --radius-panel: 12px;
+  --shadow-panel: 0 4px 16px var(--color-shadow);
 }

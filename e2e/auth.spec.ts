@@ -48,6 +48,11 @@ test("acesso direto e cookie adulterado não abrem a área interna", async ({
   request,
 }) => {
   const anonymous = await request.get("/", { maxRedirects: 0 });
+  const brand = await request.get("/brand/prefeitura-pindamonhangaba.svg", {
+    maxRedirects: 0,
+  });
+  expect(brand.status()).toBe(200);
+  expect(brand.headers()["content-type"]).toContain("image/svg+xml");
   expect(anonymous.status()).toBe(307);
   expect(anonymous.headers().location).toBe("/login");
   expect(
@@ -90,6 +95,20 @@ test("login e saída pelo navegador revogam a sessão", async ({
 }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("button", { name: "Entrar", exact: true }),
+  ).toBeEnabled();
+  await expect
+    .poll(() =>
+      page
+        .getByRole("img", {
+          name: "Prefeitura Municipal de Pindamonhangaba",
+          exact: true,
+        })
+        .evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await page.screenshot({ path: ".local/identity-login.png", fullPage: true });
   await page.getByLabel("E-mail", { exact: true }).fill(email);
   await page.getByLabel("Senha", { exact: true }).fill("senha-incorreta");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
@@ -99,6 +118,10 @@ test("login e saída pelo navegador revogam a sessão", async ({
   await page.getByLabel("Senha", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page).toHaveURL(origin + "/");
+  await expect(
+    page.getByRole("link", { name: "Início", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await page.screenshot({ path: ".local/identity-home.png", fullPage: true });
   await expect(
     page.getByText("Servidor de teste", { exact: true }),
   ).toBeVisible();

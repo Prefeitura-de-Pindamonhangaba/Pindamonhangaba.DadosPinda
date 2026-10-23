@@ -19,6 +19,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=production-dependencies --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/.next ./.next
+COPY --from=build --chown=bun:bun /app/public ./public
 COPY --from=build --chown=bun:bun /app/package.json ./package.json
 COPY --from=build --chown=bun:bun /app/next.config.ts ./next.config.ts
 USER bun

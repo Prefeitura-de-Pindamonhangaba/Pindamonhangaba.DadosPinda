@@ -2,28 +2,34 @@
 
 .panel-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  padding-block: 24px;
+  padding-block: 20px;
 }
 .product-brand {
   white-space: nowrap;
-  color: var(--color-secondary-blue);
+  color: var(--color-on-brand);
+  background: var(--color-brand-accent);
+  border-radius: var(--radius-control);
+  padding: 4px 16px;
   text-decoration: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: -0.04em;
+  border-left: 5px solid var(--color-brand-accent);
+  padding-left: 14px;
 }
 .product-brand span {
-  color: var(--color-primary-green-dark);
+  color: var(--color-accent-yellow);
 }
 .panel-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  padding-block: 16px;
-  border-block: 1px solid var(--color-border-light);
+  gap: 4px;
+  padding-block: 8px;
+  border: 0;
 }
 .panel-nav a,
 .external-link {
@@ -41,6 +47,10 @@
   gap: 24px;
   align-items: start;
   margin-bottom: 32px;
+  padding: 24px 28px;
+  background: var(--color-surface-info);
+  border-left: 5px solid var(--color-brand-accent);
+  border-radius: var(--radius-panel);
 }
 .page-heading h1 {
   font-size: clamp(2rem, 5vw, 3rem);
@@ -51,10 +61,12 @@
   white-space: nowrap;
 }
 .consultation-form {
-  border-top: 2px solid var(--color-secondary-blue);
-  padding: 24px;
-  background: var(--color-white);
+  border-top: 4px solid var(--color-brand-accent);
+  padding: 28px;
+  background: var(--color-surface);
   margin-bottom: 24px;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
 }
 .panel-main fieldset {
   border: 0;
@@ -122,8 +134,12 @@
 }
 .result-record {
   margin-top: 32px;
-  padding-block: 24px;
-  border-top: 2px solid var(--color-secondary-blue);
+  padding: 24px;
+  border: 1px solid var(--color-border-light);
+  border-top: 4px solid var(--color-brand-accent);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
 }
 .result-heading h3 {
   margin: 0;
@@ -159,13 +175,19 @@
 }
 .result-section {
   min-width: 0;
-  background: var(--color-white);
-  padding: 20px 24px;
+  background: var(--color-surface);
+  padding: 20px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-control);
 }
 .result-section h4 {
-  margin: 0 0 16px;
-  color: var(--color-secondary-blue);
+  margin: -20px -20px 12px;
+  padding: 12px 20px;
+  background: var(--color-surface-info);
+  border-left: 4px solid var(--color-light-blue);
+  color: var(--color-brand);
   font-size: 1rem;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
 }
 .result-fields {
   margin: 0;
@@ -230,6 +252,11 @@
 }
 .usage-summary {
   margin-bottom: 32px;
+  background: var(--color-surface);
+  padding: 24px;
+  border: 1px solid var(--color-border-light);
+  border-top: 4px solid var(--color-accent-orange);
+  border-radius: var(--radius-panel);
 }
 .panel-main progress {
   width: 100%;
@@ -308,18 +335,21 @@
 
 .login-layout {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 80px;
-  align-items: start;
-  min-height: 75vh;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: stretch;
+  gap: 0;
+  padding-block: 56px;
+  min-height: 70vh;
 }
 .login-layout h1 {
   font-size: clamp(3rem, 6vw, 4.5rem);
 }
 .login-panel {
-  padding: 32px;
-  background: var(--color-white);
-  border-top: 3px solid var(--color-secondary-blue);
+  padding: 40px;
+  background: var(--color-surface);
+  border-top: 5px solid var(--color-brand-accent);
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+  box-shadow: var(--shadow-panel);
 }
 .login-panel h2 {
   margin-top: 0;
@@ -342,14 +372,18 @@
 }
 .button {
   min-height: 44px;
-  border: 0;
+  border: 1px solid transparent;
   padding: 10px 24px;
-  background: var(--color-secondary-blue);
-  color: var(--color-white);
+  background: var(--color-action);
+  color: var(--color-on-brand);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .button:disabled {
   opacity: 0.65;
@@ -359,9 +393,9 @@
   width: 100%;
 }
 .button-secondary {
-  background: var(--color-white);
-  color: var(--color-secondary-blue);
-  border: 1px solid var(--color-secondary-blue);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  border: 1px solid var(--color-brand);
 }
 .form-error {
   color: var(--color-secondary-red);
@@ -410,7 +444,7 @@ body {
   margin: 0;
   background: var(--color-background-page);
   color: var(--color-text-dark);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family-sans);
   line-height: 1.6;
 }
 .container {
@@ -418,15 +452,15 @@ body {
   margin-inline: auto;
 }
 .institutional-header {
-  background: var(--color-white);
-  border-top: 6px solid var(--color-primary-green-dark);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
 }
 .header-content {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 24px;
-  padding-block: 24px;
+  padding-block: 4px;
   font-size: 0.875rem;
 }
 .header-content strong {
@@ -442,17 +476,24 @@ main {
   gap: 16px;
 }
 .eyebrow {
+  display: inline-block;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--color-secondary-blue);
+  color: var(--color-brand);
+  padding: 4px 10px;
+  background: var(--color-surface-success);
+  border-radius: var(--radius-control);
 }
 .status {
-  background: var(--color-white);
+  background: var(--color-surface-info);
+  color: var(--color-brand);
   padding: 6px 12px;
   font-size: 0.75rem;
-  border: 1px solid var(--color-border-light);
+  font-weight: 600;
+  border: 1px solid var(--color-light-blue);
+  border-radius: var(--radius-control);
 }
 h1 {
   color: var(--color-secondary-blue);
@@ -480,20 +521,23 @@ p {
 .workspace {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 64px;
-  border-top: 2px solid var(--color-secondary-blue);
-  padding-block: 32px;
+  gap: 24px;
+  border: 0;
+  padding-block: 0;
 }
 .workspace h2 {
   font-size: 1.8rem;
   max-width: 380px;
 }
 .notice {
-  border-left: 3px solid var(--color-accent-yellow);
-  padding-left: 16px;
+  border-left: 4px solid var(--color-accent-orange);
+  padding: 14px 18px;
+  background: var(--color-surface-warning);
+  border-radius: var(--radius-control);
 }
 .table-container {
   overflow-x: auto;
+  border-radius: var(--radius-control);
 }
 table {
   border-collapse: collapse;
@@ -514,8 +558,12 @@ tbody th {
   font-weight: 600;
 }
 .privacy {
-  margin-top: 48px;
-  max-width: 720px;
+  margin-top: 32px;
+  max-width: none;
+  padding: 24px 28px;
+  background: var(--color-surface-warning);
+  border-left: 5px solid var(--color-accent-yellow);
+  border-radius: var(--radius-panel);
 }
 .privacy h2 {
   font-size: 1rem;
@@ -527,17 +575,18 @@ footer {
 }
 .skip-link {
   position: absolute;
+  z-index: 20;
   left: 24px;
   top: -100px;
-  background: var(--color-white);
-  color: var(--color-secondary-blue);
+  background: var(--color-surface);
+  color: var(--color-brand);
   padding: 12px;
 }
 .skip-link:focus {
   top: 12px;
 }
 :focus-visible {
-  outline: 3px solid var(--color-secondary-blue);
+  outline: 3px solid var(--color-focus);
   outline-offset: 4px;
 }
 .visually-hidden {
@@ -566,5 +615,262 @@ footer {
   th,
   td {
     padding: 12px;
+  }
+}
+
+/* Identidade institucional — componentes compartilhados. */
+.institutional-ribbon {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: 0.75rem;
+}
+.institutional-ribbon > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 7px;
+}
+.institutional-logo {
+  display: block;
+  width: 280px;
+  height: 118px;
+  object-fit: contain;
+}
+.institutional-department {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+  color: var(--color-brand);
+}
+.institutional-department strong {
+  font-size: 1rem;
+}
+.panel-nav-band {
+  background: var(--color-brand);
+  border-bottom: 4px solid var(--color-brand-accent);
+}
+.panel-nav a {
+  display: inline-flex;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--color-on-brand);
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: var(--radius-control);
+  border-bottom: 3px solid transparent;
+}
+.panel-nav a:hover {
+  background: var(--color-action-hover);
+}
+.panel-nav a[aria-current="page"] {
+  color: var(--color-brand);
+  background: var(--color-surface);
+  border-bottom-color: var(--color-accent-yellow);
+}
+.panel-nav a:focus-visible,
+.institutional-footer a:focus-visible {
+  outline-color: var(--color-accent-yellow);
+}
+.button:hover:not(:disabled) {
+  background: var(--color-action-hover);
+  color: var(--color-on-brand);
+}
+.button-secondary:hover:not(:disabled) {
+  background: var(--color-surface-info);
+  color: var(--color-brand);
+}
+.panel-main input:not([type="checkbox"]),
+.panel-main select,
+.panel-main textarea,
+.login-panel input {
+  border-color: var(--color-control-border);
+  border-radius: var(--radius-control);
+}
+.panel-main input:focus,
+.panel-main textarea:focus,
+.panel-main select:focus,
+.login-panel input:focus {
+  border-color: var(--color-brand);
+}
+.panel-main legend {
+  background: var(--color-surface-success);
+  padding: 8px 14px;
+  border-radius: var(--radius-control);
+}
+.form-error:not(:empty) {
+  background: var(--color-surface-danger);
+  padding: 12px;
+  border-left: 4px solid var(--color-secondary-red);
+  border-radius: var(--radius-control);
+}
+thead {
+  background: var(--color-surface-info);
+}
+.status[data-status="success"] {
+  background: var(--color-surface-success);
+  border-color: var(--color-primary-green-dark);
+}
+.status[data-status="not_found"] {
+  background: var(--color-surface-warning);
+  border-color: var(--color-accent-yellow);
+}
+.status[data-status="unavailable"] {
+  background: var(--color-surface-danger);
+  border-color: var(--color-secondary-red);
+}
+.result-section:nth-child(1) h4 {
+  background: var(--color-surface-success);
+  border-left-color: var(--color-brand-accent);
+}
+.result-section:nth-child(3) h4 {
+  background: var(--color-surface-warning);
+  border-left-color: var(--color-accent-yellow);
+}
+.result-section:nth-child(5) h4 {
+  border-left-color: var(--color-accent-orange);
+}
+.workspace > div {
+  padding: 28px;
+  background: var(--color-surface);
+  border-top: 5px solid var(--color-brand-accent);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+.workspace > div + div {
+  background: var(--color-surface-info);
+  border-top-color: var(--color-light-blue);
+}
+.home-hero {
+  padding: 36px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-left: 8px solid var(--color-brand-accent);
+  border-bottom: 4px solid var(--color-accent-yellow);
+}
+.home-hero h1 {
+  color: var(--color-on-brand);
+  max-width: 800px;
+}
+.home-hero .eyebrow {
+  color: var(--color-brand);
+  background: var(--color-accent-yellow);
+}
+.home-hero p {
+  max-width: 680px;
+  margin-bottom: 0;
+}
+.login-introduction {
+  padding: 48px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-radius: var(--radius-panel) 0 0 var(--radius-panel);
+  border-bottom: 6px solid var(--color-accent-yellow);
+}
+.login-introduction h1 {
+  color: var(--color-on-brand);
+}
+.login-introduction h1 span {
+  color: var(--color-accent-yellow);
+}
+.login-introduction .eyebrow {
+  background: var(--color-accent-yellow);
+  color: var(--color-brand);
+}
+.login-introduction .introduction {
+  margin-bottom: 32px;
+}
+.institutional-footer {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-top: 5px solid var(--color-brand-accent);
+  margin-top: 24px;
+}
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  padding-block: 12px;
+}
+.footer-content > div:first-child strong {
+  font-size: 1.5rem;
+}
+.footer-content strong > span {
+  color: var(--color-accent-yellow);
+}
+.footer-content p {
+  margin-bottom: 4px;
+}
+.footer-content > div + div {
+  text-align: right;
+}
+@media (max-width: 800px) {
+  .institutional-department strong {
+    display: none;
+  }
+  .institutional-department {
+    text-align: left;
+  }
+  .institutional-ribbon span {
+    display: none;
+  }
+  .login-introduction {
+    padding: 32px;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  }
+  .login-panel {
+    border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+  }
+  .home-hero,
+  .page-heading {
+    padding: 24px;
+  }
+  .panel-nav {
+    gap: 4px;
+  }
+  .panel-nav a {
+    padding: 8px 10px;
+    font-size: 0.8125rem;
+  }
+  .footer-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .footer-content > div + div {
+    text-align: left;
+  }
+}
+@media (max-width: 450px) {
+  .institutional-logo {
+    width: 250px;
+    height: 104px;
+  }
+  .institutional-department {
+    font-size: 0.75rem;
+    padding-bottom: 12px;
+  }
+  .result-record {
+    padding: 16px;
+  }
+  .result-section h4 {
+    margin: -16px -16px 12px;
+    padding: 12px 16px;
+  }
+}
+@media print {
+  .institutional-header,
+  .panel-bar,
+  .panel-nav-band,
+  .institutional-footer {
+    display: none;
+  }
+  .page-heading,
+  .result-record {
+    background: var(--color-surface);
+    box-shadow: none;
+    color: var(--color-text-dark);
+    border: 0;
+  }
+  .home-hero h1 {
+    color: var(--color-text-dark);
   }
 }

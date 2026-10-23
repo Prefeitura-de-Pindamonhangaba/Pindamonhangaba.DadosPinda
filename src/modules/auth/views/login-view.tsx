@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/shared/lib/auth/client";
 import { useHydrated } from "@/shared/lib/auth/use-hydrated";
 import { loginSchema } from "@/modules/auth/schemas/login-schema";
+import {
+  InstitutionalHeader,
+  InstitutionalFooter,
+} from "@/shared/components/institutional-header";
 
 export function LoginView() {
   const router = useRouter();
@@ -51,14 +55,9 @@ export function LoginView() {
 
   return (
     <>
-      <header className="institutional-header">
-        <div className="container header-content">
-          <strong>Prefeitura de Pindamonhangaba</strong>
-          <span>SETIP · Departamento de Sistemas de Informação</span>
-        </div>
-      </header>
+      <InstitutionalHeader />
       <main id="main" className="container login-layout" tabIndex={-1}>
-        <div>
+        <div className="login-introduction">
           <span className="eyebrow">Acesso institucional</span>
           <h1>
             Pinda Dados<span aria-hidden="true">.</span>
@@ -112,9 +111,7 @@ export function LoginView() {
           </p>
         </section>
       </main>
-      <footer className="container">
-        Pinda Dados · Uso restrito e auditado
-      </footer>
+      <InstitutionalFooter />
     </>
   );
 }

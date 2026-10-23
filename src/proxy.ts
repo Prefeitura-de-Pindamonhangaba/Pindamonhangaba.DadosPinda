@@ -6,6 +6,7 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (
     path === "/login" ||
+    path === "/brand/prefeitura-pindamonhangaba.svg" ||
     path === "/api/health" ||
     path.startsWith("/api/auth/")
   )
