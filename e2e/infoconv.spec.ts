@@ -432,6 +432,28 @@ test("lote TXT, erros por item e exportação funcionam no navegador", async ({
     page.getByText("PESSOA FICTÍCIA — TESTE", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Sem resultado", { exact: true })).toBeVisible();
+  const record = page
+    .getByRole("article")
+    .filter({ hasText: "PESSOA FICTÍCIA — TESTE" });
+  await expect(
+    record.getByRole("heading", { name: "Identificação", exact: true }),
+  ).toBeVisible();
+  await expect(record.getByText("12/03/1985", { exact: true })).toBeVisible();
+  await expect(
+    record.getByText("Não se aplica", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    record
+      .getByText("Data de atualização", { exact: true })
+      .locator("..")
+      .locator("dd"),
+  ).toHaveText("-");
+  await expect(
+    record.getByText("CEP", { exact: true }).locator("..").locator("dd"),
+  ).toHaveText("-");
+  await expect(
+    record.getByText("Telefone", { exact: true }).locator("..").locator("dd"),
+  ).toHaveText("-");
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV", exact: true }).click();
   const download = await downloadPromise;

@@ -118,6 +118,8 @@ Use `compose.dev.yml` apenas para banco local; nunca publique PostgreSQL na rede
 
 ## Validação
 
+Os resultados são agrupados em identificação, cadastro/atividade, endereço, contato e informações complementares, mantendo todos os campos do perfil. Datas cadastrais válidas são exibidas em `dd/mm/aaaa`, sem deslocamento por fuso. Valores ausentes, datas inexistentes e identificadores preenchidos somente com zeros aparecem como `-`. Códigos cadastrais e valores monetários/percentuais zero válidos são preservados. Ano de óbito zerado aparece como `Não se aplica`; ano ausente ou inválido permanece `-`, sem presumir a situação vital. Máscaras de CPF/CNPJ, CEP e telefone são aplicadas na apresentação e no CSV, sem modificar os dados originais criptografados nem a assinatura de autorização. A impressão utiliza a mesma apresentação.
+
 Testes unitários cobrem contratos, validação documental, criptografia, adulteração, validade de cache, atualização forçada, exportação e erros. O teste SOAP usa os WSDL oficiais contra servidor HTTP exclusivamente local com dados fictícios. O Playwright usa PostgreSQL local isolado com sufixo `_test` e adapter fictício, sem certificado real e sem chamadas cadastrais ao SERPRO.
 
 O único acesso autenticado ao serviço oficial durante o desenvolvimento foi a obtenção dos WSDL. Consultas reais de CPF/CNPJ não são usadas como teste para evitar consumo desnecessário e exposição de dados pessoais.

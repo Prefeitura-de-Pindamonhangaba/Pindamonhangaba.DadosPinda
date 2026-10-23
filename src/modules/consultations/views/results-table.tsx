@@ -1,9 +1,6 @@
 "use client";
-import {
-  CPF_FIELDS,
-  CNPJ_FIELDS,
-  SOCIETY_FIELDS,
-} from "@/modules/data-sources/infoconv/fields";
+import { SOCIETY_FIELDS } from "@/modules/data-sources/infoconv/fields";
+import { resultGroups } from "../services/result-groups";
 import type { ConsultationResult } from "../models/consultation-types";
 import {
   formatField,
@@ -18,7 +15,8 @@ export function ResultsTable({ results }: { results: ConsultationResult[] }) {
         <article className="result-record" key={result.id}>
           <div className="result-heading">
             <h3>
-              {result.kind.toUpperCase()} {result.document}
+              {result.kind.toUpperCase()}{" "}
+              {formatField(result.document, result.kind.toUpperCase())}
             </h3>
             <span className="status">{statusLabels[result.status]}</span>
           </div>
@@ -36,24 +34,24 @@ export function ResultsTable({ results }: { results: ConsultationResult[] }) {
           {result.status === "success" && (
             <details open>
               <summary>Dados cadastrais</summary>
-              <div className="table-container">
-                <table>
-                  <caption className="visually-hidden">
-                    Dados retornados pelo Infoconv para {result.document}
-                  </caption>
-                  <tbody>
-                    {Object.entries(
-                      result.kind === "cpf" ? CPF_FIELDS : CNPJ_FIELDS,
-                    )
-                      .filter(([field]) => field !== "Sociedade")
-                      .map(([field, label]) => (
-                        <tr key={field}>
-                          <th scope="row">{label}</th>
-                          <td>{formatField(result.data[field])}</td>
-                        </tr>
+              <div className="result-sections">
+                {resultGroups(result.kind).map((group) => (
+                  <section
+                    className="result-section"
+                    key={group.title}
+                    aria-label={group.title}
+                  >
+                    <h4>{group.title}</h4>
+                    <dl className="result-fields">
+                      {group.fields.map(({ field, label }) => (
+                        <div className="result-field" key={field}>
+                          <dt>{label}</dt>
+                          <dd>{formatField(result.data[field], field)}</dd>
+                        </div>
                       ))}
-                  </tbody>
-                </table>
+                    </dl>
+                  </section>
+                ))}
               </div>
               {Array.isArray(result.data.Sociedade) &&
                 result.data.Sociedade.length > 0 && (
@@ -81,8 +79,8 @@ export function ResultsTable({ results }: { results: ConsultationResult[] }) {
                               {Object.keys(SOCIETY_FIELDS).map((field) => (
                                 <td key={field}>
                                   {typeof partner === "object"
-                                    ? partner[field] || "Não informado"
-                                    : partner}
+                                    ? formatField(partner[field], field)
+                                    : formatField(partner, field)}
                                 </td>
                               ))}
                             </tr>
