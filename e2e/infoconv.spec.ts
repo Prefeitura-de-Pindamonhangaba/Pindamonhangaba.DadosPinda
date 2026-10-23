@@ -439,6 +439,26 @@ test("lote TXT, erros por item e exportação funcionam no navegador", async ({
     record.getByRole("heading", { name: "Identificação", exact: true }),
   ).toBeVisible();
   await expect(record.getByText("12/03/1985", { exact: true })).toBeVisible();
+  await expect(record.getByText("2 — Feminino", { exact: true })).toBeVisible();
+  await expect(
+    record.getByText(
+      "41 — Membro ou servidor público da administração direta municipal",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(record.getByText(/212 — Analista de sistemas/)).toBeVisible();
+  await expect(
+    record
+      .getByText("Residente no exterior", { exact: true })
+      .locator("..")
+      .locator("dd"),
+  ).toHaveText("N — Não");
+  await expect(
+    record
+      .getByText("Estrangeiro", { exact: true })
+      .locator("..")
+      .locator("dd"),
+  ).toHaveText("N — Não");
   await expect(
     record.getByText("Não se aplica", { exact: true }),
   ).toBeVisible();

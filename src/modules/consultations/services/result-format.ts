@@ -2,6 +2,7 @@ import {
   CPF_FIELDS,
   CNPJ_FIELDS,
 } from "@/modules/data-sources/infoconv/fields";
+import { describeInfoconvCode } from "@/modules/data-sources/infoconv/domain-labels";
 import type {
   ConsultationResult,
   ProfileData,
@@ -68,6 +69,8 @@ export function formatField(
   if (typeof value === "string") {
     const text = value.trim();
     if (!text || /^(null|undefined)$/i.test(text)) return "-";
+    const description = describeInfoconvCode(field, text);
+    if (description) return description;
     if (DATE_FIELDS.has(field)) return formatDate(text);
     if (field === "AnoObito") {
       if (/^0+$/.test(text)) return "Não se aplica";

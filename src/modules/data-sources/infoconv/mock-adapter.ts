@@ -26,6 +26,11 @@ export class MockInfoconvAdapter implements DataSourceAdapter {
               DataNascimento: "19850312",
               DataAtualizacao: "00000000",
               AnoObito: "0000",
+              Sexo: "2",
+              ResidenteExterior: "N",
+              Estrangeiro: "N",
+              NaturezaOcupacao: "41",
+              OcupacaoPrincipal: "212",
               CEP: "00000000",
               Telefone: "000000000",
             }

@@ -2,12 +2,43 @@ import { expect, test } from "bun:test";
 import {
   formatField,
   formatDate,
+  exportResultsCsv,
 } from "../src/modules/consultations/services/result-format";
 import { resultGroups } from "../src/modules/consultations/services/result-groups";
 import {
   CPF_FIELDS,
   CNPJ_FIELDS,
 } from "../src/modules/data-sources/infoconv/fields";
+import type { ConsultationResult } from "../src/modules/consultations/models/consultation-types";
+
+test("exportação inclui descrições sem alterar os códigos originais", () => {
+  const result: ConsultationResult = {
+    id: crypto.randomUUID(),
+    batchId: crypto.randomUUID(),
+    kind: "cpf",
+    document: "11144477735",
+    status: "success",
+    origin: "mock",
+    obtainedAt: "2026-10-23T12:00:00Z",
+    data: {
+      NaturezaOcupacao: "41",
+      OcupacaoPrincipal: "212",
+      Sexo: "2",
+      ResidenteExterior: "N",
+      Estrangeiro: "S",
+    },
+  };
+  const original = JSON.stringify(result);
+  const csv = exportResultsCsv([result]);
+  expect(csv).toContain(
+    "41 — Membro ou servidor público da administração direta municipal",
+  );
+  expect(csv).toContain("212 — Analista de sistemas");
+  expect(csv).toContain("2 — Feminino");
+  expect(csv).toContain("N — Não");
+  expect(csv).toContain("S — Sim");
+  expect(JSON.stringify(result)).toBe(original);
+});
 
 test("datas cadastrais usam dd/mm/aaaa sem conversão de fuso nem normalização de datas inválidas", () => {
   expect(formatField("19850312", "DataNascimento")).toBe("12/03/1985");
@@ -75,4 +106,58 @@ test("agrupamentos mantêm todos os campos cadastrais sem duplicação", () => {
         .sort(),
     );
   }
+});
+
+test("domínios CPF mostram código e descrição sem confundir os campos", () => {
+  expect(formatField("41", "NaturezaOcupacao")).toBe(
+    "41 — Membro ou servidor público da administração direta municipal",
+  );
+  expect(formatField("041", "NaturezaOcupacao")).toBe(
+    "041 — Membro ou servidor público da administração direta municipal",
+  );
+  expect(formatField("01", "NaturezaOcupacao")).toBe(
+    "01 — Empregado de empresa do setor privado, exceto de instituições financeiras",
+  );
+  expect(formatField("212", "OcupacaoPrincipal")).toContain(
+    "212 — Analista de sistemas",
+  );
+  expect(formatField("010", "OcupacaoPrincipal")).toBe(
+    "010 — Militar da Aeronáutica",
+  );
+  expect(formatField("000", "OcupacaoPrincipal")).toBe(
+    "000 — Outras ocupações não especificadas anteriormente",
+  );
+  expect(formatField("000", "NaturezaOcupacao")).toBe("-");
+  expect(formatField("1", "Sexo")).toBe("1 — Masculino");
+  expect(formatField("2", "Sexo")).toBe("2 — Feminino");
+  expect(formatField("9", "Sexo")).toBe("9 — Não informado");
+  for (const field of ["ResidenteExterior", "Estrangeiro"]) {
+    expect(formatField("S", field)).toBe("S — Sim");
+    expect(formatField("N", field)).toBe("N — Não");
+    expect(formatField(" n ", field)).toBe("n — Não");
+    expect(formatField(undefined, field)).toBe("-");
+    expect(formatField("0", field)).toBe(
+      "0 — Código não identificado na tabela de referência",
+    );
+  }
+  expect(formatField("999", "OcupacaoPrincipal")).toBe(
+    "999 — Código não identificado na tabela de referência",
+  );
+  expect(formatField("__proto__", "Sexo")).toContain("Código não identificado");
+  expect(formatField("2", "OutroCampo")).toBe("2");
+});
+
+test("ocupações preservam a validade informada pela Receita em alterações históricas", () => {
+  expect(formatField("229", "OcupacaoPrincipal")).toContain(
+    "até o ano-calendário 2023",
+  );
+  expect(formatField("230", "OcupacaoPrincipal")).toContain(
+    "Fonoaudiólogo (a partir do ano-calendário 2024)",
+  );
+  expect(formatField("231", "OcupacaoPrincipal")).toContain(
+    "Fisioterapeuta (a partir do ano-calendário 2024)",
+  );
+  expect(formatField("232", "OcupacaoPrincipal")).toContain(
+    "Terapeuta ocupacional (a partir do ano-calendário 2024)",
+  );
 });
