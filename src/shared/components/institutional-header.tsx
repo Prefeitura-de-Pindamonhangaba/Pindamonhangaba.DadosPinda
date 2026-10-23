@@ -37,6 +37,15 @@ export function InstitutionalFooter() {
             Pinda Dados<span aria-hidden="true">.</span>
           </strong>
           <p>Informação integrada para a gestão municipal.</p>
+          <a
+            className="repository-link"
+            href="https://github.com/Prefeitura-de-Pindamonhangaba/Pindamonhangaba.DadosPinda"
+            target="_blank"
+            rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
+          >
+            Código aberto · Repositório no GitHub ↗
+          </a>
         </div>
         <div>
           <strong>Prefeitura de Pindamonhangaba</strong>

@@ -800,6 +800,16 @@ thead {
 .footer-content p {
   margin-bottom: 4px;
 }
+.repository-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-on-brand);
+  text-underline-offset: 4px;
+}
+.repository-link:hover {
+  color: var(--color-accent-yellow);
+}
 .footer-content > div + div {
   text-align: right;
 }
