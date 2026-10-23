@@ -6,10 +6,33 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       NODE_ENV: production
+      ALLOW_LOCAL_HTTP: ${ALLOW_LOCAL_HTTP:-false}
       APP_URL: ${APP_URL:?Defina APP_URL}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Defina BETTER_AUTH_SECRET}
       DATABASE_URL: postgresql://${POSTGRES_USER:?Defina POSTGRES_USER}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?Defina POSTGRES_DB}
+      INFOCONV_ENABLED: ${INFOCONV_ENABLED:-false}
+      INFOCONV_TRANSPORT: ${INFOCONV_TRANSPORT:-soap}
+      INFOCONV_CERTIFICATE_PATH: ${INFOCONV_CERTIFICATE_PATH:-/run/secrets/infoconv.pem}
+      INFOCONV_CERTIFICATE_PASSPHRASE: ${INFOCONV_CERTIFICATE_PASSPHRASE:-}
+      INFOCONV_REQUESTER_CPF: ${INFOCONV_REQUESTER_CPF:-}
+      INFOCONV_CPF_WSDL: ${INFOCONV_CPF_WSDL:-https://acesso.infoconv.receita.fazenda.gov.br/ws/cpf/consultarcpf.asmx?wsdl}
+      INFOCONV_CNPJ_WSDL: ${INFOCONV_CNPJ_WSDL:-https://acesso.infoconv.receita.fazenda.gov.br/ws/cnpj/consultarcnpj.asmx?wsdl}
+      INFOCONV_CA_PATH: ${INFOCONV_CA_PATH:-/run/secrets/infoconv-ca.pem}
+      INFOCONV_CACHE_KEY: ${INFOCONV_CACHE_KEY:-}
+      INFOCONV_AUDIT_KEY: ${INFOCONV_AUDIT_KEY:-}
+      INFOCONV_TIMEOUT_MS: ${INFOCONV_TIMEOUT_MS:-15000}
+      INFOCONV_REQUESTS_PER_MINUTE: ${INFOCONV_REQUESTS_PER_MINUTE:-30}
+      INFOCONV_MONTHLY_LIMIT: ${INFOCONV_MONTHLY_LIMIT:-10000}
+      INFOCONV_MONTHLY_LIMIT_CPF: ${INFOCONV_MONTHLY_LIMIT_CPF:-}
+      INFOCONV_MONTHLY_LIMIT_CNPJ: ${INFOCONV_MONTHLY_LIMIT_CNPJ:-}
+    volumes:
+      - type: bind
+        source: ${INFOCONV_CERTIFICATES_DIR:-./certificates}
+        target: /run/secrets
+        read_only: true
     depends_on:
+      init:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     networks: [frontend, database]
@@ -25,6 +48,26 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+  init:
+    build:
+      context: .
+      target: build
+    user: bun
+    restart: "no"
+    entrypoint: [bun, scripts/bootstrap.ts]
+    environment:
+      NODE_ENV: production
+      ALLOW_LOCAL_HTTP: ${ALLOW_LOCAL_HTTP:-false}
+      APP_URL: ${APP_URL:?Defina APP_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Defina BETTER_AUTH_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER:?Defina POSTGRES_USER}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?Defina POSTGRES_DB}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Administrador}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [database]
   db:
     image: postgres:17.6-alpine
     restart: unless-stopped

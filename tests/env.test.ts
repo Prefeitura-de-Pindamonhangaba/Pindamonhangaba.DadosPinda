@@ -33,3 +33,21 @@ describe("configuração do ambiente", () => {
     ).toThrow("DATABASE_URL");
   });
 });
+
+test("HTTP local exige autorização explícita e não libera hosts remotos", () => {
+  const base = {
+    NODE_ENV: "production",
+    DATABASE_URL: "postgresql://test:test@localhost/test",
+    ALLOW_LOCAL_HTTP: "true",
+  };
+  expect(
+    parseEnvironment({ ...base, APP_URL: "http://localhost:3000" }).APP_URL,
+  ).toBe("http://localhost:3000");
+  for (const APP_URL of [
+    "http://example.org",
+    "http://localhost.example.org",
+    "http://localhost@example.org",
+  ]) {
+    expect(() => parseEnvironment({ ...base, APP_URL })).toThrow();
+  }
+});

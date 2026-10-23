@@ -5,13 +5,15 @@ export const environmentSchema = z
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    ALLOW_LOCAL_HTTP: z.enum(["true", "false"]).default("false"),
     APP_URL: z.url({ protocol: /^https?$/ }),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   })
   .superRefine((value, context) => {
     if (
       value.NODE_ENV === "production" &&
-      !value.APP_URL.startsWith("https://")
+      !value.APP_URL.startsWith("https://") &&
+      !(value.ALLOW_LOCAL_HTTP === "true" && isLoopbackUrl(value.APP_URL))
     ) {
       context.addIssue({
         code: "custom",
@@ -40,4 +42,12 @@ export function parseAuthEnvironment(
   if (!secret.success)
     throw new Error("Configuração de ambiente inválida: BETTER_AUTH_SECRET.");
   return { ...base, BETTER_AUTH_SECRET: secret.data };
+}
+
+export function isLoopbackUrl(value: string) {
+  const url = new URL(value);
+  return (
+    url.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
+  );
 }
