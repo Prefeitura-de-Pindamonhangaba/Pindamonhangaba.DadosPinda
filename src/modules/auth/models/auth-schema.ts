@@ -11,7 +11,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-export const userRole = pgEnum("user_role", ["viewer", "admin"]);
+export const userRole = pgEnum("user_role", ["viewer", "operator", "admin"]);
 const timestamps = () => ({
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

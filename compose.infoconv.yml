@@ -1,0 +1,27 @@
+# Acrescentar ao compose.yml somente onde os certificados estiverem disponíveis.
+services:
+  app:
+    environment:
+      INFOCONV_ENABLED: ${INFOCONV_ENABLED:-false}
+      INFOCONV_CERTIFICATE_PATH: /run/secrets/infoconv.pem
+      INFOCONV_CERTIFICATE_PASSPHRASE: ${INFOCONV_CERTIFICATE_PASSPHRASE:-}
+      INFOCONV_REQUESTER_CPF: ${INFOCONV_REQUESTER_CPF:?Defina INFOCONV_REQUESTER_CPF}
+      INFOCONV_CPF_WSDL: ${INFOCONV_CPF_WSDL:?Defina INFOCONV_CPF_WSDL}
+      INFOCONV_CNPJ_WSDL: ${INFOCONV_CNPJ_WSDL:?Defina INFOCONV_CNPJ_WSDL}
+      INFOCONV_CA_PATH: /run/secrets/infoconv-ca.pem
+      INFOCONV_CACHE_KEY: ${INFOCONV_CACHE_KEY:?Defina INFOCONV_CACHE_KEY}
+      INFOCONV_AUDIT_KEY: ${INFOCONV_AUDIT_KEY:?Defina INFOCONV_AUDIT_KEY}
+      INFOCONV_REQUESTS_PER_MINUTE: ${INFOCONV_REQUESTS_PER_MINUTE:-30}
+      INFOCONV_TIMEOUT_MS: ${INFOCONV_TIMEOUT_MS:-15000}
+      INFOCONV_MONTHLY_LIMIT: ${INFOCONV_MONTHLY_LIMIT:-10000}
+      INFOCONV_MONTHLY_LIMIT_CPF: ${INFOCONV_MONTHLY_LIMIT_CPF:-}
+      INFOCONV_MONTHLY_LIMIT_CNPJ: ${INFOCONV_MONTHLY_LIMIT_CNPJ:-}
+    volumes:
+      - type: bind
+        source: ${INFOCONV_CERTIFICATE_HOST_PATH:?Defina INFOCONV_CERTIFICATE_HOST_PATH}
+        target: /run/secrets/infoconv.pem
+        read_only: true
+      - type: bind
+        source: ${INFOCONV_CA_HOST_PATH:?Defina INFOCONV_CA_HOST_PATH}
+        target: /run/secrets/infoconv-ca.pem
+        read_only: true

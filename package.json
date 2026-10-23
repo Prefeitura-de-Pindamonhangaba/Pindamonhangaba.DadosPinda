@@ -4,6 +4,8 @@
   "private": true,
   "packageManager": "bun@1.4.4",
   "scripts": {
+    "references:seed": "bun scripts/seed-references.ts",
+    "cache:purge": "bun scripts/purge-cache.ts",
     "users:create": "bun scripts/create-user.ts",
     "users:manage": "bun scripts/manage-user.ts",
     "test:e2e": "bunx playwright test",
@@ -27,6 +29,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
+    "soap": "^1.14.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

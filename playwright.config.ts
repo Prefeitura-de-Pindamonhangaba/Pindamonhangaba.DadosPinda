@@ -33,6 +33,17 @@ export default defineConfig({
       DATABASE_URL: databaseUrl,
       BETTER_AUTH_SECRET: "isolated-e2e-only-secret-never-use-in-production",
       PLAYWRIGHT_TEST: "1",
+      INFOCONV_ENABLED: "false",
+      INFOCONV_CERTIFICATE_PATH: "test-only-nonexistent.pem",
+      INFOCONV_CERTIFICATE_PASSPHRASE: "",
+      INFOCONV_REQUESTER_CPF: "11144477735",
+      INFOCONV_CA_PATH: "",
+      INFOCONV_CPF_WSDL:
+        "https://acesso.infoconv.receita.fazenda.gov.br/ws/cpf/consultarcpf.asmx?wsdl",
+      INFOCONV_CNPJ_WSDL:
+        "https://acesso.infoconv.receita.fazenda.gov.br/ws/cnpj/consultarcnpj.asmx?wsdl",
+      INFOCONV_CACHE_KEY: "ab".repeat(32),
+      INFOCONV_AUDIT_KEY: "cd".repeat(32),
     },
   },
 });

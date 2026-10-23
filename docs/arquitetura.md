@@ -6,7 +6,7 @@ O repositório iniciou sem aplicação. A fase 1 estabelece roteamento, apresent
 
 ## Decisão
 
-Manter um monólito MVC modular. `src/app` contém roteamento e layout; a apresentação inicial fica em `modules/foundation/views`. O módulo `auth` separa controllers HTTP, serviço Better Auth, políticas, schemas e views. O módulo `users` concentra provisionamento e manutenção por console, com repositories. A auditoria de identidade tem tabela independente de logs técnicos.
+Manter um monólito MVC modular. `src/app` contém roteamento e layout. Os módulos `auth`, `users`, `consultations`, `reference-data` e `data-sources/infoconv` separam controllers, serviços, repositories, schemas e views. A composição de dependências do servidor fica em `shared/lib`. A auditoria de identidade e a de consultas têm tabelas independentes de logs técnicos.
 
 O cliente de banco é exclusivo do servidor e reutiliza conexão por processo. Zod valida configurações no momento de uso, com falha explícita e sem incluir valores secretos nos erros. O build não exige conexão ao banco; a área interna exige sessão válida em PostgreSQL.
 
@@ -16,8 +16,18 @@ Os schemas ficam em `modules/<modulo>/models/*-schema.ts`. A primeira migração
 
 O runtime mínimo adotado é Bun 1.4.4, também fixado no Docker e em `packageManager`. O Bun 1.3.1 apresentou falha interna ao carregar módulos CommonJS no build de produção do Next.js 16.4.2.
 
-A estrutura cresce conforme os casos de uso. Better Auth fornece autenticação consolidada e adapter Drizzle, justificando as duas dependências adicionais. Contas locais permitem login sem antecipar um provedor institucional. O wrapper central permite acrescentar SSO posteriormente; não há adapter Infoconv nem endpoints de consulta ativos. Ver [autenticação](autenticacao.md).
+A estrutura cresce conforme os casos de uso. Better Auth fornece autenticação consolidada e adapter Drizzle. O pacote `soap` foi acrescentado para interpretar os WSDL oficiais e serializar SOAP sem inventar contratos; seu transporte exige mTLS, valida TLS e restringe endpoints. O wrapper de autenticação permite acrescentar SSO posteriormente. Ver [autenticação](autenticacao.md) e [integração Infoconv](infoconv.md).
+
+## Cache de consultas
+
+O usuário definiu reutilização da base antes de chamar o SERPRO, com respostas criptografadas retidas por 7 dias. Foi adotado AES-256-GCM para conteúdo e HMAC com chave independente para busca/auditoria. Locks transacionais evitam chamadas duplicadas para o mesmo documento e coordenam limites de consumo entre instâncias. Cache expirado não é retornado. Auditoria registra a finalidade e o resultado operacional sem reproduzir a resposta.
+
+Essa decisão reduz consumo, mas significa que o resultado pode refletir a data de obtenção dentro da validade de sete dias. A interface mostra essa data e a origem. Administradores podem solicitar atualização forçada. Resultados oficiais são imutáveis; correções exigem nova consulta na fonte. A limpeza é executada na aplicação e deve ter agendamento externo em produção para períodos de indisponibilidade.
 
 ## Identidade visual
 
 Tokens copiados da [referência oficial](https://dsiapp.pindamonhangaba.sp.gov.br/paleta-prefeitura/), consultada em 22/10/2026 via HTTPS. Incluem as cores institucionais e os neutros definidos na referência. A interface prioriza azul para textos, verde para marca e amarelo para sinalização; fonte de sistema para evitar dependência de serviços externos durante build e navegação.
+
+## Controle de excedente contratado
+
+A franquia conjunta de 10.000 chamadas mensais é bloqueada por padrão. Liberações administrativas de quantidade extra são registros imutáveis por mês UTC, com justificativa, responsável e ciência explícita da cobrança adicional. A liberação mais recente substitui o total extra anterior, inclusive zero para revogação. O mesmo lock transacional global serializa liberações e reservas de consultas. No mês seguinte não há saldo extra herdado. Cache não consome franquia.

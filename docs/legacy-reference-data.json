@@ -1,0 +1,712 @@
+[
+  {
+    "type": "SECRETARIA",
+    "code": "1",
+    "label": "SECRETARIA DE SAUDE E ASSISTENCIA SOCIAL"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "2",
+    "label": "SECRETARIA DE OBRAS E SERVIÇOS"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "3",
+    "label": "SECRETARIA DE ADMINISTRACAO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "4",
+    "label": "SECRETARIA DE PLANEJAMENTO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "5",
+    "label": "SECRETARIA DE ASSUNTOS JURIDICOS"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "6",
+    "label": "SECRETARIA DA JUVENTUDE  ESPORTES E LAZER"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "8",
+    "label": "SECRETARIA DE EDUCACAO E CULTURA"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "9",
+    "label": "CANCELADO"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "10",
+    "label": "ORCAMENTO APROVADO"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "11",
+    "label": "CONCLUIDO"
+  },
+  {
+    "type": "CARGO",
+    "code": "25",
+    "label": "MOTORISTA"
+  },
+  {
+    "type": "CARGO",
+    "code": "26",
+    "label": "MECANICO"
+  },
+  {
+    "type": "CARGO",
+    "code": "27",
+    "label": "PINTOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "28",
+    "label": "AJUDANTE"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "29",
+    "label": "PENDENCIA PEÇAS"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "30",
+    "label": "SAIDA DO DSM"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "31",
+    "label": "LT"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "32",
+    "label": "UN"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "33",
+    "label": "KG"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "34",
+    "label": "CENTO"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "35",
+    "label": "DZ"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "36",
+    "label": "TON"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "37",
+    "label": "AGUARDA ORCAMENTO"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "38",
+    "label": "EXECUTANDO"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "41",
+    "label": "NC"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "42",
+    "label": "M2"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "43",
+    "label": "MT"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "44",
+    "label": "CM"
+  },
+  {
+    "type": "MESES",
+    "code": "45",
+    "label": "JANEIRO"
+  },
+  {
+    "type": "MESES",
+    "code": "46",
+    "label": "FEVEREIRO"
+  },
+  {
+    "type": "MESES",
+    "code": "47",
+    "label": "MARCO"
+  },
+  {
+    "type": "MESES",
+    "code": "48",
+    "label": "ABRIL"
+  },
+  {
+    "type": "MESES",
+    "code": "49",
+    "label": "MAIO"
+  },
+  {
+    "type": "MESES",
+    "code": "50",
+    "label": "JUNHO"
+  },
+  {
+    "type": "MESES",
+    "code": "51",
+    "label": "JULHO"
+  },
+  {
+    "type": "MESES",
+    "code": "52",
+    "label": "AGOSTO"
+  },
+  {
+    "type": "MESES",
+    "code": "53",
+    "label": "SETEMBRO"
+  },
+  {
+    "type": "MESES",
+    "code": "54",
+    "label": "OUTUBRO"
+  },
+  {
+    "type": "MESES",
+    "code": "55",
+    "label": "NOVEMBRO"
+  },
+  {
+    "type": "MESES",
+    "code": "56",
+    "label": "DEZEMBRO"
+  },
+  {
+    "type": "CARGO",
+    "code": "58",
+    "label": "BORRACHEIRO"
+  },
+  {
+    "type": "SETOR",
+    "code": "59",
+    "label": "DSM"
+  },
+  {
+    "type": "CARGO",
+    "code": "60",
+    "label": "ESCRITURARIO JUNIOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "61",
+    "label": "SERRALHEIRO"
+  },
+  {
+    "type": "CARGO",
+    "code": "62",
+    "label": "FUNILEIRO"
+  },
+  {
+    "type": "CARGO",
+    "code": "63",
+    "label": "PINTOR FUNILEIRO"
+  },
+  {
+    "type": "CARGO",
+    "code": "64",
+    "label": "LAVADOR DE AUTOS"
+  },
+  {
+    "type": "CARGO",
+    "code": "65",
+    "label": "SOLDADOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "66",
+    "label": "ELETRICISTA"
+  },
+  {
+    "type": "CARGO",
+    "code": "67",
+    "label": "ESCRITURARIO SENIOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "68",
+    "label": "OPERADOR MAQ LEVES"
+  },
+  {
+    "type": "CARGO",
+    "code": "69",
+    "label": "OPERADOR MAQ ESPECIAIS"
+  },
+  {
+    "type": "CARGO",
+    "code": "70",
+    "label": "ENGENHEIRO"
+  },
+  {
+    "type": "CARGO",
+    "code": "71",
+    "label": "TOPOGRAFO"
+  },
+  {
+    "type": "CARGO",
+    "code": "72",
+    "label": "DIRETOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "73",
+    "label": "COORDENADOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "74",
+    "label": "SUPERVISOR"
+  },
+  {
+    "type": "CARGO",
+    "code": "75",
+    "label": "CHEFE DE SERVICO"
+  },
+  {
+    "type": "CARGO",
+    "code": "76",
+    "label": "ALMOXARIFE"
+  },
+  {
+    "type": "CARGO",
+    "code": "77",
+    "label": "MEIO OFICIAL"
+  },
+  {
+    "type": "CARGO",
+    "code": "78",
+    "label": "FISCAL DE PEDAGIO"
+  },
+  {
+    "type": "CARGO",
+    "code": "79",
+    "label": "AUX DE ESCRITORIO"
+  },
+  {
+    "type": "CARGO",
+    "code": "80",
+    "label": "PEDREIRO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "84",
+    "label": "DEPTRAN"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "87",
+    "label": "PC"
+  },
+  {
+    "type": "MEDIDA",
+    "code": "88",
+    "label": "HR"
+  },
+  {
+    "type": "SETOR",
+    "code": "251",
+    "label": "DOV"
+  },
+  {
+    "type": "CARGO",
+    "code": "90",
+    "label": "ENCARREGADO DE SETOR"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "255",
+    "label": "SECRETARIA DO MEIO AMBIENTE"
+  },
+  {
+    "type": "SETOR",
+    "code": "257",
+    "label": "BOMBEIROS"
+  },
+  {
+    "type": "SETOR",
+    "code": "261",
+    "label": "EDUCACAO"
+  },
+  {
+    "type": "SETOR",
+    "code": "262",
+    "label": "SAUDE"
+  },
+  {
+    "type": "SETOR",
+    "code": "263",
+    "label": "DEFESA CIVIL"
+  },
+  {
+    "type": "SETOR",
+    "code": "264",
+    "label": "SUB-PREFEITURA DE MOREIRA CESAR"
+  },
+  {
+    "type": "SETOR",
+    "code": "279",
+    "label": "DLC"
+  },
+  {
+    "type": "SETOR",
+    "code": "284",
+    "label": "SEO"
+  },
+  {
+    "type": "SETOR",
+    "code": "285",
+    "label": "MEIO AMBIENTE"
+  },
+  {
+    "type": "SETOR",
+    "code": "287",
+    "label": "AGRICULTURA"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "288",
+    "label": "SECRETARIA DO DESENVOLVIMENTO ECONOMICO"
+  },
+  {
+    "type": "SETOR",
+    "code": "289",
+    "label": "JURIDICO"
+  },
+  {
+    "type": "SETOR",
+    "code": "294",
+    "label": "ADMINISTRACAO"
+  },
+  {
+    "type": "SETOR",
+    "code": "295",
+    "label": "DEPTO MUNICIPAL DE TRANSITO"
+  },
+  {
+    "type": "SETOR",
+    "code": "296",
+    "label": "LICENCIAMENTO"
+  },
+  {
+    "type": "SETOR",
+    "code": "301",
+    "label": "PATRIMONIO"
+  },
+  {
+    "type": "SETOR",
+    "code": "302",
+    "label": "OFICINA"
+  },
+  {
+    "type": "SETOR",
+    "code": "303",
+    "label": "SAUDE OCUPACIONAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "306",
+    "label": "ARRECADACAO"
+  },
+  {
+    "type": "SETOR",
+    "code": "307",
+    "label": "FINANCAS"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "312",
+    "label": "SECRETARIA DE FINANCAS"
+  },
+  {
+    "type": "SETOR",
+    "code": "315",
+    "label": "FUNDO SOCIAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "317",
+    "label": "PLANEJAMENTO"
+  },
+  {
+    "type": "SETOR",
+    "code": "400",
+    "label": "RURAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "349",
+    "label": "GABINETE PREF"
+  },
+  {
+    "type": "SETOR",
+    "code": "351",
+    "label": "DRH"
+  },
+  {
+    "type": "SETOR",
+    "code": "352",
+    "label": "MERENDA"
+  },
+  {
+    "type": "SETOR",
+    "code": "353",
+    "label": "CULTURA"
+  },
+  {
+    "type": "SETOR",
+    "code": "399",
+    "label": "TURISMO"
+  },
+  {
+    "type": "SETOR",
+    "code": "401",
+    "label": "ELETRICA"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "403",
+    "label": "SECRETARIA DE GOVERNO E INTEGRACAO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "404",
+    "label": "SECRETARIA DE RELACOES INSTITUCIONAIS"
+  },
+  {
+    "type": "SETOR",
+    "code": "405",
+    "label": "CONTABILIDADE"
+  },
+  {
+    "type": "SETOR",
+    "code": "406",
+    "label": "EMPENHO"
+  },
+  {
+    "type": "SETOR",
+    "code": "407",
+    "label": "TESOURARIA"
+  },
+  {
+    "type": "SETOR",
+    "code": "412",
+    "label": "CONSELHO TUTELAR"
+  },
+  {
+    "type": "SETOR",
+    "code": "417",
+    "label": "SEGURANCA"
+  },
+  {
+    "type": "SETOR",
+    "code": "418",
+    "label": "REGIONAL LESTE"
+  },
+  {
+    "type": "SETOR",
+    "code": "419",
+    "label": "REGIONAL ARARETAMA"
+  },
+  {
+    "type": "SETOR",
+    "code": "427",
+    "label": "HABITACAO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "428",
+    "label": "SECRETARIA DE HABITACAO"
+  },
+  {
+    "type": "SETOR",
+    "code": "430",
+    "label": "INFORMATICA"
+  },
+  {
+    "type": "SETOR",
+    "code": "431",
+    "label": "DEPTO ESPORTES"
+  },
+  {
+    "type": "SETOR",
+    "code": "432",
+    "label": "DEPTO LAZER"
+  },
+  {
+    "type": "CARGO",
+    "code": "433",
+    "label": "SERVENTE"
+  },
+  {
+    "type": "CARGO",
+    "code": "434",
+    "label": "SECRETARIO"
+  },
+  {
+    "type": "SETOR",
+    "code": "435",
+    "label": "GAB DA SECRETARIA DE SAUDE E PROM SOCIAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "436",
+    "label": "ASSESSORIA DE SAUDE BUCAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "437",
+    "label": "DEPTO DE ASSISTENCIA A SAUDE"
+  },
+  {
+    "type": "SETOR",
+    "code": "438",
+    "label": "DEPTO DE PROMOCAO DA SAUDE E CIDADANIA"
+  },
+  {
+    "type": "SETOR",
+    "code": "439",
+    "label": "DEPTO DE PROTECAO AOS RISCOS E AGRAVOS A SAUDE"
+  },
+  {
+    "type": "SETOR",
+    "code": "440",
+    "label": "DEPTO DE ATENCAO BASICA"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "465",
+    "label": "AGUARDA APROVACAO"
+  },
+  {
+    "type": "PROTOCOLO",
+    "code": "467",
+    "label": "003"
+  },
+  {
+    "type": "SETOR",
+    "code": "475",
+    "label": "LAR SAO VICENTE DE PAULO"
+  },
+  {
+    "type": "SETOR",
+    "code": "476",
+    "label": "SERVIÇO DE OBRAS SOCIAIS - SOS"
+  },
+  {
+    "type": "SITUACAO",
+    "code": "484",
+    "label": "FICHA DE COMUNICAÇÃO"
+  },
+  {
+    "type": "SETOR",
+    "code": "485",
+    "label": "USINA"
+  },
+  {
+    "type": "SETOR",
+    "code": "519",
+    "label": "PARTICULAR"
+  },
+  {
+    "type": "SETOR",
+    "code": "521",
+    "label": "FUNDAÇÃO JOÃO ROMEIRO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "522",
+    "label": "FUNDAÇÃO JOÃO ROMEIRO"
+  },
+  {
+    "type": "SETOR",
+    "code": "525",
+    "label": "CAMARA MUNICIPAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "527",
+    "label": "POLICIA MILITAR"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "528",
+    "label": "ORGÃO EXTERNO"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "529",
+    "label": "GABINETE PREF"
+  },
+  {
+    "type": "SETOR",
+    "code": "534",
+    "label": "POLICIA CIVIL"
+  },
+  {
+    "type": "SETOR",
+    "code": "536",
+    "label": "APAE"
+  },
+  {
+    "type": "SETOR",
+    "code": "537",
+    "label": "FORUM"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "538",
+    "label": "SUB-PREFEITURA DE MOREIRA CESAR"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "539",
+    "label": "FUNDO SOCIAL"
+  },
+  {
+    "type": "SECRETARIA",
+    "code": "540",
+    "label": "DEFESA CIVIL"
+  },
+  {
+    "type": "SETOR",
+    "code": "544",
+    "label": "DLA"
+  },
+  {
+    "type": "DEPARTAMENTO",
+    "code": "545",
+    "label": "DEPARTAMENTO DE LICENCIAMENTO AMBIENTAL"
+  },
+  {
+    "type": "SETOR",
+    "code": "546",
+    "label": "EVENTOS"
+  }
+]

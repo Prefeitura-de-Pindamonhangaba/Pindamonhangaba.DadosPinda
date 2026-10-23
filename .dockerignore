@@ -2,6 +2,10 @@
 .next
 .next-e2e
 .local
+*.pem
+*.pfx
+*.p12
+*.key
 node_modules
 .env*
 coverage

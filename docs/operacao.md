@@ -39,4 +39,4 @@ Definir rotina de `pg_dump` com armazenamento protegido, retenção e testes de 
 
 ## Próximas decisões
 
-Definir provedor SSO e expandir a política RBAC quando houver funcionalidades de consulta. Login local, proteção do painel e auditoria de identidade já estão implementados. Obter documentação técnica e serviços contratados do SERPRO antes de implementar Infoconv. Não há integração externa, cache ou histórico de resultados cadastrais.
+Confirmar provedor SSO e políticas institucionais de identidade e retenção da auditoria. A integração SOAP Infoconv usa os perfis do legado e os WSDL oficiais, com cache criptografado por 7 dias. A franquia conjunta CPF/CNPJ é de 10.000 chamadas mensais; excedentes exigem liberação administrativa com ciência da cobrança, válida somente no mês corrente. Confira o saldo compartilhado no extrato SERPRO e programe a limpeza externa do cache. Consulte [integração, certificados e deploy](infoconv.md).

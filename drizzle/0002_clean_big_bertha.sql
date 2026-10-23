@@ -1,0 +1,1 @@
+ALTER TABLE "consultation_cache" ADD CONSTRAINT "consultation_cache_retention_check" CHECK ("consultation_cache"."expires_at" > "consultation_cache"."obtained_at" and "consultation_cache"."expires_at" <= "consultation_cache"."obtained_at" + interval '7 days');
