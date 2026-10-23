@@ -2,11 +2,10 @@ import { readFile } from "node:fs/promises";
 import { Agent } from "node:https";
 import { X509Certificate } from "node:crypto";
 import { createClientAsync, HttpClient } from "soap";
-import type { InfoconvEnvironment } from "./env";
-import { parseInfoconvResponse } from "./response-schema";
+import type { SoapEnvironment } from "./env";
+import type { SoapTransport } from "./soap-transport";
 import {
   ConsultationError,
-  type DataSourceAdapter,
   type DocumentKind,
 } from "@/modules/consultations/models/consultation-types";
 
@@ -49,11 +48,13 @@ class RestrictedHttpClient extends HttpClient {
   }
 }
 
-export class InfoconvAdapter implements DataSourceAdapter {
-  constructor(private readonly env: InfoconvEnvironment) {}
-  async consult(kind: DocumentKind, document: string) {
-    if (this.env.INFOCONV_ENABLED !== "true")
-      throw new ConsultationError("unavailable");
+export class InfoconvSoapClient implements SoapTransport {
+  constructor(
+    private readonly env: SoapEnvironment,
+    private readonly options: { enabled: boolean; timeoutMs: number },
+  ) {}
+  async request(kind: DocumentKind, document: string): Promise<unknown> {
+    if (!this.options.enabled) throw new ConsultationError("unavailable");
     let agent: Agent | undefined;
     try {
       const pem = await readFile(this.env.INFOCONV_CERTIFICATE_PATH);
@@ -80,10 +81,7 @@ export class InfoconvAdapter implements DataSourceAdapter {
           : this.env.INFOCONV_CNPJ_WSDL;
       assertOfficialInfoconvUrl(wsdl);
       const client = await createClientAsync(wsdl, {
-        httpClient: new RestrictedHttpClient(
-          agent,
-          this.env.INFOCONV_TIMEOUT_MS,
-        ),
+        httpClient: new RestrictedHttpClient(agent, this.options.timeoutMs),
         forceUseSchemaXmlns: true,
       });
       const operation =
@@ -103,7 +101,7 @@ export class InfoconvAdapter implements DataSourceAdapter {
       const output: unknown = await method.call(client, parameters);
       if (!Array.isArray(output))
         throw new ConsultationError("invalid_response");
-      return { data: parseInfoconvResponse(kind, document, output[0]) };
+      return output[0];
     } catch (error) {
       // Nunca propagar SoapFault, XML, certificados ou configuração de transporte.
       if (error instanceof ConsultationError) throw error;

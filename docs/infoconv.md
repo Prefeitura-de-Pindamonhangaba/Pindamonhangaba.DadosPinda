@@ -20,6 +20,7 @@ As configurações hard coded usadas pela integração foram transferidas para o
 | Variável                          | Uso                                                                                                              |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `INFOCONV_ENABLED`                | Habilita chamadas reais; padrão `false` em novas instalações                                                     |
+| `INFOCONV_TRANSPORT`              | Seleciona o transporte; padrão `soap`, único protocolo atualmente implementado                                   |
 | `INFOCONV_CERTIFICATE_PATH`       | Caminho do PEM contendo certificado, cadeia e chave privada                                                      |
 | `INFOCONV_CERTIFICATE_PASSPHRASE` | Senha do PEM, quando aplicável                                                                                   |
 | `INFOCONV_REQUESTER_CPF`          | Identificação técnica `CPFUsuario` utilizada pelo legado; confirmar sua vinculação ao convênio antes de produção |
@@ -115,6 +116,42 @@ docker compose -f compose.yml -f compose.infoconv.yml up --build -d
 ```
 
 Use `compose.dev.yml` apenas para banco local; nunca publique PostgreSQL na rede de produção. Configure APP_URL HTTPS, proxy de confiança, políticas de retenção da auditoria, backups sem cache e agendamento da limpeza. Certificados, chaves e `.env` não entram na imagem. Nenhuma senha do legado está na pull request.
+
+## Isolamento do transporte e futura migração para REST
+
+O protocolo é um detalhe interno da fonte Infoconv. O serviço de consultas recebe `DataSourceAdapter`, cujo método `consult(kind, document)` retorna `{ data: ProfileData }` ou um erro de domínio. Controllers, interface, cache, auditoria e limites não importam SOAP nem classes concretas. O formato normalizado conserva os campos cadastrais e arrays de CNAEs/sócios; não contém envelopes XML ou nomes de operações.
+
+```text
+Composição do servidor → adapter-factory.ts → DataSourceAdapter
+                                                |
+                                      SoapInfoconvAdapter
+                                                |
+                                  InfoconvSoapClient / mTLS
+                                                |
+                                   Web Service oficial
+```
+
+Responsabilidades em `src/modules/data-sources/infoconv/`:
+
+- `adapter-factory.ts`: único ponto que escolhe e constrói o adapter; carrega o transporte sob demanda. A seleção de dados fictícios permanece restrita a testes locais fora de produção.
+- `env.ts`: configuração comum de protocolo, chaves, ativação, timeout e limites, sem exigir WSDL ou certificado.
+- `profile-schema.ts`: contrato normalizado e namespace do perfil contratado, independente do transporte. O schema também valida cache e resultados enviados para exportação.
+- `transports/soap/env.ts`: valida exclusivamente as configurações SOAP existentes, preservando os nomes das variáveis.
+- `transports/soap/soap-client.ts`: biblioteca SOAP, WSDL, operações e parâmetros oficiais, certificado, mTLS, timeout, restrição de URLs e erros de transporte.
+- `transports/soap/response-schema.ts`: valida o envelope/perfil SOAP, trata os códigos de erro e transforma CNAEs/sócios em arrays.
+- `transports/soap/soap-adapter.ts`: converte o resultado de transporte para o contrato normalizado e impede propagação de falhas internas.
+
+`INFOCONV_TRANSPORT` assume `soap` quando ausente, mantendo as instalações existentes compatíveis. `rest` e outros valores são rejeitados explicitamente; não há adapter REST fictício, endpoint presumido ou fallback automático entre protocolos. A configuração comum pode ser validada sem credenciais SOAP; ao selecionar o adapter SOAP, suas configurações específicas continuam obrigatórias.
+
+Para implementar a migração futura:
+
+1. Confirmar documentação, perfis contratados, autenticação, URLs, requisições, respostas, erros e regras de cobrança da API REST oficial.
+2. Implementar um adapter em `transports/rest/` que cumpra `DataSourceAdapter`, valide a resposta e a converta para o mesmo contrato com `normalizeInfoconvProfile`. Manter credenciais, transporte e mapper REST nesse diretório.
+3. Acrescentar validação de configuração REST e o ramo correspondente na factory. Somente então aceitar `INFOCONV_TRANSPORT=rest`; WSDL e certificados SOAP não devem se tornar dependências do ramo REST.
+4. Configurar variáveis e montagens específicas do REST no deploy e homologar com fixtures oficiais, sem modificar controllers, views ou o serviço de consultas.
+5. Conferir equivalência e completude do perfil contratado antes de reutilizar o cache. O namespace atual foi preservado exatamente para manter os registros já criptografados válidos por sete dias. Se o perfil ou o significado dos campos mudar, decidir explicitamente versionamento/invalidação do cache antes da troca.
+
+As tentativas continuam sendo reservadas e auditadas no serviço de consultas antes do adapter. Nenhum transporte deve implementar repetição automática de consultas faturáveis, alterar cotas, contornar cache ou fazer fallback silencioso para outra API.
 
 ## Domínios cadastrais
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cachedProfileSchema } from "@/modules/data-sources/infoconv/response-schema";
+import { normalizedProfileSchema } from "@/modules/data-sources/infoconv/profile-schema";
 export const disclosureSchema = z.object({
   format: z.enum(["csv", "print"]),
   results: z
@@ -13,7 +13,7 @@ export const disclosureSchema = z.object({
         origin: z.enum(["cache", "serpro", "mock"]),
         obtainedAt: z.iso.datetime(),
         expiresAt: z.iso.datetime().optional(),
-        data: cachedProfileSchema,
+        data: normalizedProfileSchema,
         message: z.string().max(500).optional(),
         proof: z.string().regex(/^[a-f\d]{64}$/),
       }),

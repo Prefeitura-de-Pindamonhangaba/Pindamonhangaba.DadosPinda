@@ -4,6 +4,7 @@ import {
   createHmac,
   randomBytes,
 } from "node:crypto";
+import { INFOCONV_CACHE_NAMESPACE } from "@/modules/data-sources/infoconv/profile-schema";
 
 export function cacheContext(key: string, obtainedAt: Date, expiresAt: Date) {
   return `${key}:${obtainedAt.toISOString()}:${expiresAt.toISOString()}`;
@@ -11,7 +12,7 @@ export function cacheContext(key: string, obtainedAt: Date, expiresAt: Date) {
 
 export function documentDigest(key: string, kind: string, document: string) {
   return createHmac("sha256", Buffer.from(key, "hex"))
-    .update(`infoconv:DEC8789:${kind}:${document}`)
+    .update(`${INFOCONV_CACHE_NAMESPACE}:${kind}:${document}`)
     .digest("hex");
 }
 
