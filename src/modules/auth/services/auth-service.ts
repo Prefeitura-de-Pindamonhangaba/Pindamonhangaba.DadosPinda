@@ -52,7 +52,7 @@ export function createAuthService(
     },
     advanced: {
       database: { generateId: "uuid" },
-      useSecureCookies: env.NODE_ENV === "production",
+      useSecureCookies: env.APP_URL.startsWith("https://"),
       defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
       ipAddress: { ipAddressHeaders: ["x-real-ip"] },
     },

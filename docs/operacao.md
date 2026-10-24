@@ -40,3 +40,17 @@ Definir rotina de `pg_dump` com armazenamento protegido, retenção e testes de 
 ## Próximas decisões
 
 Confirmar provedor SSO e políticas institucionais de identidade e retenção da auditoria. A integração SOAP Infoconv usa os perfis do legado e os WSDL oficiais, com cache criptografado por 7 dias. A franquia conjunta CPF/CNPJ é de 10.000 chamadas mensais; excedentes exigem liberação administrativa com ciência da cobrança, válida somente no mês corrente. Confira o saldo compartilhado no extrato SERPRO e programe a limpeza externa do cache. Consulte [integração, certificados e deploy](infoconv.md).
+
+## Inicialização local e ferramentas de produção
+
+O Compose padrão prepara automaticamente o banco somente quando `ALLOW_LOCAL_HTTP=true` e `APP_URL` aponta para HTTP em loopback. Nessa situação aplica migrações e cria a conta inicial apenas se não houver usuários. Credenciais `INITIAL_ADMIN_*` são entregues somente ao serviço temporário `init`. Veja [início rápido](inicio-rapido.md).
+
+Em produção, mantenha `ALLOW_LOCAL_HTTP=false`. Antes de iniciar a aplicação, revise e aplique migrações explicitamente:
+
+```sh
+docker compose up -d db
+docker compose -f compose.yml -f compose.tools.yml build tools
+docker compose -f compose.yml -f compose.tools.yml run --rm tools --bun run db:migrate
+```
+
+Provisione a primeira conta pelo comando `users:create` do mesmo serviço `tools`, enviando JSON por entrada padrão conforme [autenticação](autenticacao.md). Não coloque senhas em argumentos. Depois execute `docker compose up --build -d`. O serviço `init` não modifica o banco em produção.

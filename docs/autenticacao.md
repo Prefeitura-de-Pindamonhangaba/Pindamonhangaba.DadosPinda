@@ -6,13 +6,7 @@ Usar Better Auth 1.7.12 com adapter Drizzle/PostgreSQL para login por e-mail e s
 
 ## Ambiente e banco
 
-`APP_URL` deve ser a origem exata usada no navegador, inclusive porta. Configure `BETTER_AUTH_SECRET` com pelo menos 32 caracteres aleatórios, somente no backend. Gere sem imprimir no terminal, apenas se a variável ainda não existir:
-
-```powershell
-$secretBytes = [byte[]]::new(48)
-[Security.Cryptography.RandomNumberGenerator]::Fill($secretBytes)
-Add-Content .env ("BETTER_AUTH_SECRET=" + [Convert]::ToBase64String($secretBytes))
-```
+`APP_URL` deve ser a origem exata usada no navegador, inclusive porta. Configure `BETTER_AUTH_SECRET` com pelo menos 32 caracteres aleatórios, somente no backend. Preencha a variável existente no `.env` com um segredo aleatório exclusivo; não acrescente uma segunda definição. Para instalação local completa, use o [início rápido](inicio-rapido.md).
 
 Em produção, use gerenciador de segredos, `NODE_ENV=production` e `APP_URL` com HTTPS. Preserve o segredo entre reinícios e réplicas. O build não exige banco nem segredo; o uso da autenticação valida o ambiente.
 
@@ -39,8 +33,6 @@ Remove-Variable credential
 ```
 
 O papel `viewer` acessa somente painel e conta. `operator` consulta CPF/CNPJ no Infoconv, processa lotes e exporta resultados próprios. `admin` também acessa auditoria global, atualiza dados diretamente no SERPRO e gerencia servidores e domínios. Papéis e permissões desconhecidos são negados; todas as verificações ocorrem no servidor. A lista de permissões fica em `modules/auth/permissions.ts`. O último administrador ativo não pode ser desativado ou rebaixado pelo painel.
-
-Na instalação local desta tarefa foi criada a conta fictícia `admin@pinda.local`, com senha aleatória em `.local/login-inicial.json`. O arquivo está ignorado pelo Git e Docker. Use somente para desenvolvimento e exclua-o depois de guardar a senha em local protegido. Novas instalações não criam contas automaticamente.
 
 ## Desativar ou redefinir senha
 
@@ -82,3 +74,5 @@ bun run test:e2e
 Ajuste credenciais conforme seu ambiente. O teste de navegador usa Edge instalado. A CLI Playwright usa o launcher padrão `bunx`; o runner Bun direto apresentou incompatibilidade na transformação TypeScript nesta combinação de versões. A aplicação e os testes unitários usam Bun. O desenvolvimento usa Webpack para evitar recargas contínuas observadas com Turbopack nesta combinação; o build de produção usa Turbopack. Os scripts definem `NODE_ENV` explicitamente para evitar que o `.env` local altere o build de produção. Nunca use banco de produção.
 
 Referências: [Better Auth](https://better-auth.com/docs/installation), [Drizzle](https://better-auth.com/docs/adapters/drizzle), [sessões](https://better-auth.com/docs/concepts/session-management), [limites](https://better-auth.com/docs/concepts/rate-limit).
+
+Na instalação local via Compose, a primeira conta administradora é criada a partir de `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL` e `INITIAL_ADMIN_PASSWORD` somente quando o banco não possui usuários. Consulte o [início rápido](inicio-rapido.md).

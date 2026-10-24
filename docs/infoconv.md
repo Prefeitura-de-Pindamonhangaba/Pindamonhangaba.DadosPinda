@@ -20,6 +20,7 @@ As configurações hard coded usadas pela integração foram transferidas para o
 | Variável                          | Uso                                                                                                              |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `INFOCONV_ENABLED`                | Habilita chamadas reais; padrão `false` em novas instalações                                                     |
+| `INFOCONV_TRANSPORT`              | Seleciona o transporte; padrão `soap`, único protocolo atualmente implementado                                   |
 | `INFOCONV_CERTIFICATE_PATH`       | Caminho do PEM contendo certificado, cadeia e chave privada                                                      |
 | `INFOCONV_CERTIFICATE_PASSPHRASE` | Senha do PEM, quando aplicável                                                                                   |
 | `INFOCONV_REQUESTER_CPF`          | Identificação técnica `CPFUsuario` utilizada pelo legado; confirmar sua vinculação ao convênio antes de produção |
@@ -116,7 +117,58 @@ docker compose -f compose.yml -f compose.infoconv.yml up --build -d
 
 Use `compose.dev.yml` apenas para banco local; nunca publique PostgreSQL na rede de produção. Configure APP_URL HTTPS, proxy de confiança, políticas de retenção da auditoria, backups sem cache e agendamento da limpeza. Certificados, chaves e `.env` não entram na imagem. Nenhuma senha do legado está na pull request.
 
+## Isolamento do transporte e futura migração para REST
+
+O protocolo é um detalhe interno da fonte Infoconv. O serviço de consultas recebe `DataSourceAdapter`, cujo método `consult(kind, document)` retorna `{ data: ProfileData }` ou um erro de domínio. Controllers, interface, cache, auditoria e limites não importam SOAP nem classes concretas. O formato normalizado conserva os campos cadastrais e arrays de CNAEs/sócios; não contém envelopes XML ou nomes de operações.
+
+```text
+Composição do servidor → adapter-factory.ts → DataSourceAdapter
+                                                |
+                                      SoapInfoconvAdapter
+                                                |
+                                  InfoconvSoapClient / mTLS
+                                                |
+                                   Web Service oficial
+```
+
+Responsabilidades em `src/modules/data-sources/infoconv/`:
+
+- `adapter-factory.ts`: único ponto que escolhe e constrói o adapter; carrega o transporte sob demanda. A seleção de dados fictícios permanece restrita a testes locais fora de produção.
+- `env.ts`: configuração comum de protocolo, chaves, ativação, timeout e limites, sem exigir WSDL ou certificado.
+- `profile-schema.ts`: contrato normalizado e namespace do perfil contratado, independente do transporte. O schema também valida cache e resultados enviados para exportação.
+- `transports/soap/env.ts`: valida exclusivamente as configurações SOAP existentes, preservando os nomes das variáveis.
+- `transports/soap/soap-client.ts`: biblioteca SOAP, WSDL, operações e parâmetros oficiais, certificado, mTLS, timeout, restrição de URLs e erros de transporte.
+- `transports/soap/response-schema.ts`: valida o envelope/perfil SOAP, trata os códigos de erro e transforma CNAEs/sócios em arrays.
+- `transports/soap/soap-adapter.ts`: converte o resultado de transporte para o contrato normalizado e impede propagação de falhas internas.
+
+`INFOCONV_TRANSPORT` assume `soap` quando ausente, mantendo as instalações existentes compatíveis. `rest` e outros valores são rejeitados explicitamente; não há adapter REST fictício, endpoint presumido ou fallback automático entre protocolos. A configuração comum pode ser validada sem credenciais SOAP; ao selecionar o adapter SOAP, suas configurações específicas continuam obrigatórias.
+
+Para implementar a migração futura:
+
+1. Confirmar documentação, perfis contratados, autenticação, URLs, requisições, respostas, erros e regras de cobrança da API REST oficial.
+2. Implementar um adapter em `transports/rest/` que cumpra `DataSourceAdapter`, valide a resposta e a converta para o mesmo contrato com `normalizeInfoconvProfile`. Manter credenciais, transporte e mapper REST nesse diretório.
+3. Acrescentar validação de configuração REST e o ramo correspondente na factory. Somente então aceitar `INFOCONV_TRANSPORT=rest`; WSDL e certificados SOAP não devem se tornar dependências do ramo REST.
+4. Configurar variáveis e montagens específicas do REST no deploy e homologar com fixtures oficiais, sem modificar controllers, views ou o serviço de consultas.
+5. Conferir equivalência e completude do perfil contratado antes de reutilizar o cache. O namespace atual foi preservado exatamente para manter os registros já criptografados válidos por sete dias. Se o perfil ou o significado dos campos mudar, decidir explicitamente versionamento/invalidação do cache antes da troca.
+
+As tentativas continuam sendo reservadas e auditadas no serviço de consultas antes do adapter. Nenhum transporte deve implementar repetição automática de consultas faturáveis, alterar cotas, contornar cache ou fazer fallback silencioso para outra API.
+
+## Domínios cadastrais
+
+Os campos `NaturezaOcupacao`, `OcupacaoPrincipal`, `Sexo`, `ResidenteExterior` e `Estrangeiro` apresentam `código — descrição` na tela, na impressão e no CSV, sem alterar o retorno original ou consumir novas consultas. Valores ausentes permanecem `-`; códigos não reconhecidos preservam o valor com a indicação de que não foram identificados na tabela de referência. `S`/`N` são traduzidos como `Sim`/`Não`, sem presumir equivalência com indicadores numéricos não documentados.
+
+O catálogo local `occupation-domains.json` reúne 23 naturezas e 137 ocupações, conferidas em 23/10/2026:
+
+- [Domínios oficiais do Infoconv](https://apicenter.estaleiro.serpro.gov.br/documentacao/infoconv/dominios/): tabela publicada para ano-base 2022; preserva códigos e descrições do serviço, inclusive a ocupação válida `000` (outras ocupações).
+- [Instruções oficiais da Receita para IRPF 2006](https://servicos.receita.fazenda.gov.br/publico/programas/irpf/2006/orientacoes/InstrucoesModeloSimplicado2006.pdf): complementa a natureza `01`, ausente da lista publicada pelo Infoconv, com a descrição de empregado do setor privado, exceto instituições financeiras.
+- [Códigos de ocupações da Receita Federal](https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/carne-leao/manual/ocupacoes): complementa os códigos `230`–`232` e mantém a indicação explícita de vigência do `229` (até ano-calendário 2023) e dos novos códigos (a partir de 2024). Não se presume que o exercício do cadastro represente a ocupação atual.
+- [Domínios CPF do SERPRO](https://bcadastros.serpro.gov.br/documentacao/cadastro_pf/): sexo `1` masculino, `2` feminino e `9` não informado; indicadores de exterior e estrangeiro `S`/`N`.
+
+As tabelas oficiais ficam isoladas no módulo Infoconv, separadas dos domínios municipais editáveis. Atualizações futuras devem conferir as fontes e a vigência antes de substituir descrições; não usar códigos CBO de outra tabela como se fossem os códigos de ocupação do CPF.
+
 ## Validação
+
+Os resultados são agrupados em identificação, cadastro/atividade, endereço, contato e informações complementares, mantendo todos os campos do perfil. Datas cadastrais válidas são exibidas em `dd/mm/aaaa`, sem deslocamento por fuso. Valores ausentes, datas inexistentes e identificadores preenchidos somente com zeros aparecem como `-`. Códigos cadastrais e valores monetários/percentuais zero válidos são preservados. Ano de óbito zerado aparece como `Não se aplica`; ano ausente ou inválido permanece `-`, sem presumir a situação vital. Máscaras de CPF/CNPJ, CEP e telefone são aplicadas na apresentação e no CSV, sem modificar os dados originais criptografados nem a assinatura de autorização. A impressão utiliza a mesma apresentação.
 
 Testes unitários cobrem contratos, validação documental, criptografia, adulteração, validade de cache, atualização forçada, exportação e erros. O teste SOAP usa os WSDL oficiais contra servidor HTTP exclusivamente local com dados fictícios. O Playwright usa PostgreSQL local isolado com sufixo `_test` e adapter fictício, sem certificado real e sem chamadas cadastrais ao SERPRO.
 

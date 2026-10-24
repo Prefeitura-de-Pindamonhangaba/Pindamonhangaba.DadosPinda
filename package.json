@@ -2,6 +2,16 @@
   "name": "pinda-dados",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "description": "Plataforma municipal de consulta e integração cadastral com controle de acesso e auditoria.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prefeitura-de-Pindamonhangaba/Pindamonhangaba.DadosPinda.git"
+  },
+  "homepage": "https://github.com/Prefeitura-de-Pindamonhangaba/Pindamonhangaba.DadosPinda#readme",
+  "bugs": {
+    "url": "https://github.com/Prefeitura-de-Pindamonhangaba/Pindamonhangaba.DadosPinda/issues"
+  },
   "packageManager": "bun@1.4.4",
   "scripts": {
     "references:seed": "bun scripts/seed-references.ts",
@@ -17,8 +27,8 @@
     "test": "bun test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:generate": "bunx drizzle-kit generate",
-    "db:migrate": "bunx drizzle-kit migrate"
+    "db:generate": "bunx --bun drizzle-kit generate",
+    "db:migrate": "bunx --bun drizzle-kit migrate"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.12",

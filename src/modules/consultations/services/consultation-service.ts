@@ -3,7 +3,7 @@ import {
   type Principal,
 } from "@/modules/auth/services/access-service";
 import type { InfoconvEnvironment } from "@/modules/data-sources/infoconv/env";
-import { cachedProfileSchema } from "@/modules/data-sources/infoconv/response-schema";
+import { normalizedProfileSchema } from "@/modules/data-sources/infoconv/profile-schema";
 import type { ConsultationRepository } from "../models/consultation-repository";
 import type { ConsultationInput } from "../schemas/consultation-schema";
 import {
@@ -80,7 +80,7 @@ export async function consultDocument(
   };
   try {
     if (cached) {
-      const data = cachedProfileSchema.parse(
+      const data = normalizedProfileSchema.parse(
         decryptCache(
           env.INFOCONV_CACHE_KEY,
           cacheContext(key, cached.obtainedAt, cached.expiresAt),
@@ -102,7 +102,7 @@ export async function consultDocument(
     const result = await adapter.consult(input.kind, input.document);
     const obtainedAt = new Date();
     const expiresAt = new Date(obtainedAt.getTime() + CACHE_RETENTION_MS);
-    const data = cachedProfileSchema.parse(result.data);
+    const data = normalizedProfileSchema.parse(result.data);
     if (data[input.kind.toUpperCase()] !== input.document)
       throw new ConsultationError("invalid_response");
     if (!result.mock)

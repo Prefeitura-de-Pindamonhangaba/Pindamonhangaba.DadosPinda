@@ -31,3 +31,13 @@ Tokens copiados da [referência oficial](https://dsiapp.pindamonhangaba.sp.gov.b
 ## Controle de excedente contratado
 
 A franquia conjunta de 10.000 chamadas mensais é bloqueada por padrão. Liberações administrativas de quantidade extra são registros imutáveis por mês UTC, com justificativa, responsável e ciência explícita da cobrança adicional. A liberação mais recente substitui o total extra anterior, inclusive zero para revogação. O mesmo lock transacional global serializa liberações e reservas de consultas. No mês seguinte não há saldo extra herdado. Cache não consome franquia.
+
+## Decisão: transporte Infoconv substituível
+
+Contexto: há previsão de substituir o Web Service SOAP por API REST. A configuração e o parser de respostas estavam misturados com o contrato usado pelas consultas e pelo cache.
+
+Decisão: manter `DataSourceAdapter` como contrato de entrada do serviço, centralizar a seleção na factory e colocar toda a implementação SOAP em `data-sources/infoconv/transports/soap`. O contrato normalizado e a configuração comum permanecem fora do protocolo.
+
+Justificativa: a troca de protocolo deve afetar a fonte de dados, preservando autorização, auditoria, franquia, cache e apresentação. Importações específicas são carregadas apenas no ramo selecionado.
+
+Consequências: SOAP continua sendo o padrão compatível. REST só será aceito após implementação e homologação do contrato oficial; não há endpoints inventados ou fallback entre APIs. A implementação futura exige novo adapter, validação específica e registro na factory. O perfil de dados e o namespace do cache devem ser revisados caso o contrato REST seja diferente.

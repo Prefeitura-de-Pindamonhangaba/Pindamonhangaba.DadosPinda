@@ -4,9 +4,9 @@ import {
   parseDocumentList,
   consultationSchema,
 } from "../src/modules/consultations/schemas/consultation-schema";
-import { parseInfoconvResponse } from "../src/modules/data-sources/infoconv/response-schema";
+import { parseSoapResponse } from "../src/modules/data-sources/infoconv/transports/soap/response-schema";
 import { parseInfoconvEnvironment } from "../src/modules/data-sources/infoconv/env";
-import { assertOfficialInfoconvUrl } from "../src/modules/data-sources/infoconv/infoconv-adapter";
+import { assertOfficialInfoconvUrl } from "../src/modules/data-sources/infoconv/transports/soap/soap-client";
 import {
   encryptCache,
   decryptCache,
@@ -125,17 +125,17 @@ describe("contratos e validação Infoconv", () => {
         PessoaPerfilDEC8789: [{ CPF: input.document, Nome: "PESSOA FICTÍCIA" }],
       },
     };
-    expect(parseInfoconvResponse("cpf", input.document, response).Nome).toBe(
+    expect(parseSoapResponse("cpf", input.document, response).Nome).toBe(
       "PESSOA FICTÍCIA",
     );
-    expect(() => parseInfoconvResponse("cpf", "52998224725", response)).toThrow(
+    expect(() => parseSoapResponse("cpf", "52998224725", response)).toThrow(
       "invalid_response",
     );
     expect(() =>
-      parseInfoconvResponse("cpf", input.document, { unexpected: true }),
+      parseSoapResponse("cpf", input.document, { unexpected: true }),
     ).toThrow("invalid_response");
     expect(() =>
-      parseInfoconvResponse("cpf", input.document, {
+      parseSoapResponse("cpf", input.document, {
         ConsultarCPFPDEC8789Result: {
           PessoaPerfilDEC8789: {
             CPF: input.document,
@@ -146,7 +146,7 @@ describe("contratos e validação Infoconv", () => {
     ).toThrow("not_found");
   });
   test("CNPJ preserva CNAEs secundários e sócios do contrato oficial", () => {
-    const data = parseInfoconvResponse("cnpj", "04252011000110", {
+    const data = parseSoapResponse("cnpj", "04252011000110", {
       ConsultarCNPJPDEC8789Result: {
         CNPJPerfilDEC8789: {
           CNPJ: "04252011000110",
@@ -173,7 +173,9 @@ describe("contratos e validação Infoconv", () => {
       ),
     ).toThrow();
     expect(() =>
-      assertOfficialInfoconvUrl(testInfoconvEnv.INFOCONV_CPF_WSDL),
+      assertOfficialInfoconvUrl(
+        "https://acesso.infoconv.receita.fazenda.gov.br/ws/cpf/consultarcpf.asmx?wsdl",
+      ),
     ).not.toThrow();
   });
 });

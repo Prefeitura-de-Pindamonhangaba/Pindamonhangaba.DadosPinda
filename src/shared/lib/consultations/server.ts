@@ -2,8 +2,7 @@ import "server-only";
 import { getDatabase } from "@/shared/lib/db/client";
 import { type Principal } from "@/modules/auth/services/access-service";
 import { parseInfoconvEnvironment } from "@/modules/data-sources/infoconv/env";
-import { InfoconvAdapter } from "@/modules/data-sources/infoconv/infoconv-adapter";
-import { MockInfoconvAdapter } from "@/modules/data-sources/infoconv/mock-adapter";
+import { createInfoconvAdapter } from "@/modules/data-sources/infoconv/adapter-factory";
 import {
   createConsultationRepository,
   withDocumentLock,
@@ -38,10 +37,7 @@ export async function runConsultation(
   input: ConsultationInput,
 ) {
   const env = parseInfoconvEnvironment(process.env);
-  const mock =
-    process.env.NODE_ENV !== "production" &&
-    process.env.PLAYWRIGHT_TEST === "1";
-  const adapter = mock ? new MockInfoconvAdapter() : new InfoconvAdapter(env);
+  const adapter = await createInfoconvAdapter(env);
   const key = documentDigest(
     env.INFOCONV_AUDIT_KEY,
     input.kind,

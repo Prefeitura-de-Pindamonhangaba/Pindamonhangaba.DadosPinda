@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { LogoutButton } from "@/modules/auth/views/logout-button";
+import {
+  InstitutionalHeader,
+  InstitutionalFooter,
+} from "./institutional-header";
+import { PanelNavigation } from "./panel-navigation";
 
 export function PanelShell({
   userName,
@@ -14,12 +19,7 @@ export function PanelShell({
 }) {
   return (
     <>
-      <header className="institutional-header">
-        <div className="container header-content">
-          <strong>Prefeitura de Pindamonhangaba</strong>
-          <span>SETIP · Departamento de Sistemas de Informação</span>
-        </div>
-      </header>
+      <InstitutionalHeader />
       <div className="panel-bar container">
         <Link className="product-brand" href="/">
           Pinda Dados<span aria-hidden="true">.</span>
@@ -29,27 +29,11 @@ export function PanelShell({
           <LogoutButton />
         </div>
       </div>
-      <nav className="panel-nav container" aria-label="Navegação principal">
-        {canConsult && (
-          <>
-            <Link href="/consultations">Consultas</Link>
-            <Link href="/consultations/audit">Auditoria de consultas</Link>
-          </>
-        )}
-        <Link href="/account">Minha conta</Link>
-        {admin && (
-          <>
-            <Link href="/admin/users">Servidores e acessos</Link>
-            <Link href="/admin/references">Domínios e códigos</Link>
-          </>
-        )}
-      </nav>
+      <PanelNavigation admin={admin} canConsult={canConsult} />
       <main id="main" className="container panel-main" tabIndex={-1}>
         {children}
       </main>
-      <footer className="container">
-        Pinda Dados · Uso restrito, finalidade administrativa e acesso auditado
-      </footer>
+      <InstitutionalFooter />
     </>
   );
 }

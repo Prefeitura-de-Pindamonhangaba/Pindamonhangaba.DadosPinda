@@ -13,3 +13,5 @@ test-results/
 *.pfx
 *.p12
 *.key
+
+certificates/

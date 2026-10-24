@@ -12,7 +12,7 @@ export function FoundationView({
 }) {
   return (
     <PanelShell userName={userName} admin={admin} canConsult={canConsult}>
-      <div className="page-heading">
+      <div className="page-heading home-hero">
         <div>
           <span className="eyebrow">Plataforma institucional</span>
           <h1>Informação para a gestão municipal</h1>

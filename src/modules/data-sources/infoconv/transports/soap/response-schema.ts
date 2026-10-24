@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CPF_FIELDS, CNPJ_FIELDS, SOCIETY_FIELDS } from "./fields";
+import { CPF_FIELDS, CNPJ_FIELDS, SOCIETY_FIELDS } from "../../fields";
 import {
   ConsultationError,
   type DocumentKind,
@@ -43,7 +43,7 @@ const cnpjSchema = scalarSchema(CNPJ_FIELDS).extend({
     .nullish(),
 });
 
-export function parseInfoconvResponse(
+export function parseSoapResponse(
   kind: DocumentKind,
   document: string,
   response: unknown,
@@ -95,12 +95,3 @@ export function parseInfoconvResponse(
   }
   return data;
 }
-
-export const cachedProfileSchema = z.record(
-  z.string(),
-  z.union([
-    z.string().max(4096),
-    z.array(z.string()).max(99),
-    z.array(z.record(z.string(), z.string().max(4096))).max(500),
-  ]),
-);

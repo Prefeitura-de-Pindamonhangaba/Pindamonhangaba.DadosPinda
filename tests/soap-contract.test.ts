@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { createServer } from "node:http";
 import { createClientAsync } from "soap";
 import { join } from "node:path";
-import { parseInfoconvResponse } from "../src/modules/data-sources/infoconv/response-schema";
+import { SoapInfoconvAdapter } from "../src/modules/data-sources/infoconv/transports/soap/soap-adapter";
 
 test("WSDL oficiais serializam os parâmetros do legado e leem respostas SOAP locais", async () => {
   for (const kind of ["cpf", "cnpj"] as const) {
@@ -38,16 +38,20 @@ test("WSDL oficiais serializam os parâmetros do legado e leem respostas SOAP lo
       const method: unknown = client[`${operation}Async`];
       if (typeof method !== "function")
         throw new Error("Método ausente no WSDL.");
-      const output: unknown = await method.call(
-        client,
-        kind === "cpf"
-          ? { ListaDeCPF: document, CPFUsuario: "11144477735" }
-          : { CNPJ: document, CPFUsuario: "11144477735" },
-      );
-      if (!Array.isArray(output)) throw new Error("Resposta inválida.");
-      expect(
-        parseInfoconvResponse(kind, document, output[0])[kind.toUpperCase()],
-      ).toBe(document);
+      const adapter = new SoapInfoconvAdapter({
+        async request() {
+          const output: unknown = await method.call(
+            client,
+            kind === "cpf"
+              ? { ListaDeCPF: document, CPFUsuario: "11144477735" }
+              : { CNPJ: document, CPFUsuario: "11144477735" },
+          );
+          if (!Array.isArray(output)) throw new Error("Resposta inválida.");
+          return output[0];
+        },
+      });
+      const result = await adapter.consult(kind, document);
+      expect(result.data[kind.toUpperCase()]).toBe(document);
       expect(requestBody).toContain(operation);
       expect(requestBody).toContain("CPFUsuario");
       expect(requestBody).toContain(kind === "cpf" ? "ListaDeCPF" : "CNPJ");
