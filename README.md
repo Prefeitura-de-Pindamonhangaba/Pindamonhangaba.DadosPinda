@@ -47,6 +47,8 @@ Para produção, altere somente o seletor para `COMPOSE_PROFILES=production` e f
 
 Os valores de banco em `.env.example` são exclusivos de desenvolvimento. HTTPS, segredos próprios e procedimentos de backup são necessários em produção. A franquia padrão de **10.000 chamadas/mês** corresponde à instalação original; outros órgãos devem configurá-la conforme seu contrato e consumo compartilhado.
 
+Veja [GitHub Actions e produção](docs/github-actions.md) para CI, publicação de imagens e deploy manual em runner próprio. A ativação no servidor permanece desabilitada até configurarmos o ambiente.
+
 ## Desenvolver e contribuir
 
 **Stack:** Next.js App Router · React · TypeScript strict · Bun · PostgreSQL · Drizzle ORM · Zod · Better Auth.

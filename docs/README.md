@@ -15,6 +15,7 @@
 
 ## Publicar e manter
 
+- [GitHub Actions e produção](github-actions.md): CI, GHCR, runner próprio e preparação do servidor.
 - [Configuração e operação](operacao.md): containers, migrações, atualização e recuperação.
 - [Relatar vulnerabilidades](../SECURITY.md): como buscar um canal privado sem divulgar dados sensíveis.
 - [Variáveis de exemplo](../.env.example): nomes e valores locais de referência.
