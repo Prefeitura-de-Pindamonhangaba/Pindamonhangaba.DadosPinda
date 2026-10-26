@@ -1,3 +1,12 @@
+x-infoconv-files: &infoconv-files
+  - type: bind
+    source: ${INFOCONV_CERTIFICATE_HOST_PATH:?Defina INFOCONV_CERTIFICATE_HOST_PATH}
+    target: /run/secrets/infoconv.pem
+    read_only: true
+  - type: bind
+    source: ${INFOCONV_CA_HOST_PATH:?Defina INFOCONV_CA_HOST_PATH}
+    target: /run/secrets/infoconv-ca.pem
+    read_only: true
 # Acrescentar ao compose.yml somente onde os certificados estiverem disponíveis.
 services:
   app:
@@ -17,12 +26,8 @@ services:
       INFOCONV_MONTHLY_LIMIT: ${INFOCONV_MONTHLY_LIMIT:-10000}
       INFOCONV_MONTHLY_LIMIT_CPF: ${INFOCONV_MONTHLY_LIMIT_CPF:-}
       INFOCONV_MONTHLY_LIMIT_CNPJ: ${INFOCONV_MONTHLY_LIMIT_CNPJ:-}
-    volumes:
-      - type: bind
-        source: ${INFOCONV_CERTIFICATE_HOST_PATH:?Defina INFOCONV_CERTIFICATE_HOST_PATH}
-        target: /run/secrets/infoconv.pem
-        read_only: true
-      - type: bind
-        source: ${INFOCONV_CA_HOST_PATH:?Defina INFOCONV_CA_HOST_PATH}
-        target: /run/secrets/infoconv-ca.pem
-        read_only: true
+    volumes: *infoconv-files
+  init:
+    volumes: *infoconv-files
+  tools:
+    volumes: *infoconv-files

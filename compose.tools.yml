@@ -1,20 +1,3 @@
-# Ferramentas administrativas em container, sem publicar a porta do PostgreSQL.
-services:
-  tools:
-    profiles: [tools]
-    build:
-      context: .
-      target: build
-    image: pinda-dados:tools
-    user: bun
-    entrypoint: [bun]
-    environment:
-      NODE_ENV: production
-      ALLOW_LOCAL_HTTP: ${ALLOW_LOCAL_HTTP:-false}
-      APP_URL: ${APP_URL:?Defina APP_URL HTTPS}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Defina BETTER_AUTH_SECRET}
-      DATABASE_URL: postgresql://${POSTGRES_USER:?Defina POSTGRES_USER}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?Defina POSTGRES_DB}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks: [database]
+# Compatibilidade: tools já está definido em compose.yml.
+# Use docker compose run --rm tools db:migrate (e demais comandos documentados).
+services: {}
