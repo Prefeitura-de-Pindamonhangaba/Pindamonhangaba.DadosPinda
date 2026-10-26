@@ -41,3 +41,13 @@ Decisão: manter `DataSourceAdapter` como contrato de entrada do serviço, centr
 Justificativa: a troca de protocolo deve afetar a fonte de dados, preservando autorização, auditoria, franquia, cache e apresentação. Importações específicas são carregadas apenas no ramo selecionado.
 
 Consequências: SOAP continua sendo o padrão compatível. REST só será aceito após implementação e homologação do contrato oficial; não há endpoints inventados ou fallback entre APIs. A implementação futura exige novo adapter, validação específica e registro na factory. O perfil de dados e o namespace do cache devem ser revisados caso o contrato REST seja diferente.
+
+## Decisão: ambiente de deploy com seletor único
+
+Contexto: a topologia anterior dependia do PostgreSQL no mesmo Compose, dificultando produção com banco externo.
+
+Decisão: `COMPOSE_PROFILES=development|production` controla a presença do serviço local e a política de inicialização. A configuração compartilhada resolve a connection string; em desenvolvimento ignora URLs externas, em produção exige o servidor externo. `init` executa verificações antes da aplicação.
+
+Justificativa: preservar o mesmo comando de subida, sem editar arquivos Compose ou automatizar migrações de produção.
+
+Consequências: desenvolvimento mantém preparação automática e volume local; produção exige migrações e conta admin explícitas. Ferramentas usam a mesma resolução de ambiente e rede da aplicação. O runtime é o build otimizado Bun em ambos os modos. O seletor não transfere dados nem segredos entre instalações.

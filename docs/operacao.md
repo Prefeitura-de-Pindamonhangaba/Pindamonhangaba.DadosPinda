@@ -1,56 +1,84 @@
-# Configuração e operação
+# Operação e deploy
 
-## Ambiente
+## Um seletor para os dois ambientes
 
-Copie `.env.example` para `.env`. Os valores de exemplo são apenas locais. Configure também `BETTER_AUTH_SECRET` com pelo menos 32 caracteres aleatórios; veja [autenticação e contas](autenticacao.md).
+Configure `COMPOSE_PROFILES` no `.env` com **um único valor**:
 
-| Variável            | Uso                                                          |
-| ------------------- | ------------------------------------------------------------ |
-| `NODE_ENV`          | `development`, `test` ou `production`                        |
-| `APP_URL`           | URL da aplicação; HTTPS obrigatório na validação de produção |
-| `DATABASE_URL`      | Conexão PostgreSQL usada pelo cliente e pelo Drizzle Kit     |
-| `POSTGRES_USER`     | Usuário do banco no Compose                                  |
-| `POSTGRES_PASSWORD` | Senha do banco no Compose                                    |
-| `POSTGRES_DB`       | Nome do banco no Compose                                     |
+| Valor         | Banco                                                    | Inicialização                                                                   |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `development` | PostgreSQL local criado pelo Compose, sem publicar porta | Aguarda o banco, aplica migrações e cria o primeiro administrador               |
+| `production`  | Servidor externo informado em `DATABASE_URL`             | Verifica configuração, conexão, migrações e administrador; não modifica o banco |
 
-O Compose monta a conexão interna com host `db`. Use valores compatíveis com URL (codificação percentual quando necessário). Para desenvolvimento fora do Docker, configure um banco local em `DATABASE_URL`; o banco do Compose não publica porta. Mantenha ambientes e credenciais separados.
-
-## Containers
+O comando de subida é o mesmo:
 
 ```sh
 docker compose up --build -d
-docker compose ps
-docker compose logs app
 ```
 
-O app é publicado apenas em `127.0.0.1:3000`. O health check `/api/health` indica apenas disponibilidade HTTP, sem testar banco ou fontes externas. O volume `postgres_data` persiste o banco em rede interna. A aplicação executa como usuário `bun`, com dependências de produção e sem instalar Node.js.
+`NODE_ENV` não seleciona o ambiente Docker: ambos executam o build otimizado com Bun. O seletor controla a topologia e a política de segurança. Em produção, HTTP é recusado mesmo se `ALLOW_LOCAL_HTTP` legado estiver habilitado.
 
-Antes de produção, configurar `APP_URL` HTTPS, proxy reverso com TLS, segredos exclusivos e backups. A fundação não está pronta para acesso a dados pessoais. A validação de ambiente ocorre no uso de persistência e nas ferramentas de migração.
+## Desenvolvimento
 
-## Atualização e recuperação
+Copie `.env.example` para `.env`, mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` e `INITIAL_ADMIN_*`. Configure `APP_URL=http://localhost:3000`. `DATABASE_URL` é ignorada nesse modo Docker, evitando conexão acidental a um banco externo. Usuário, senha e nome do banco local são codificados automaticamente para a URL de conexão; preencha os valores brutos.
 
-1. Registrar a versão atual e fazer backup do banco antes de alterações relevantes.
-2. Validar lint, tipagem, testes, build e imagem em homologação.
-3. Revisar migrações e aplicá-las separadamente, sem execução automática no startup.
-4. Subir a imagem aprovada e conferir health check e logs.
-5. Em falha de aplicação, retornar à imagem anterior compatível com o schema. Em falha de dados, restaurar backup validado em ambiente isolado antes da troca.
+O serviço `init` aguarda o banco por tempo limitado. Na primeira subida prepara o schema e a conta; nas demais preserva os usuários e suas senhas. Veja [início rápido](inicio-rapido.md).
 
-Definir rotina de `pg_dump` com armazenamento protegido, retenção e testes de restauração conforme política municipal. Não remover volumes como procedimento de atualização. Nunca executar testes contra produção.
+## Produção com banco externo
 
-## Próximas decisões
+Configure no `.env`:
 
-Confirmar provedor SSO e políticas institucionais de identidade e retenção da auditoria. A integração SOAP Infoconv usa os perfis do legado e os WSDL oficiais, com cache criptografado por 7 dias. A franquia conjunta CPF/CNPJ é de 10.000 chamadas mensais; excedentes exigem liberação administrativa com ciência da cobrança, válida somente no mês corrente. Confira o saldo compartilhado no extrato SERPRO e programe a limpeza externa do cache. Consulte [integração, certificados e deploy](infoconv.md).
+```env
+COMPOSE_PROFILES=production
+APP_URL=https://dados.seu-orgao.example
+DATABASE_URL=postgresql://USUARIO:SENHA_CODIFICADA@SERVIDOR:5432/BANCO?sslmode=require
+BETTER_AUTH_SECRET=SEU_SEGREDO_ALEATORIO_DE_PELO_MENOS_32_CARACTERES
+```
 
-## Inicialização local e ferramentas de produção
+Substitua todos os exemplos. A senha na connection string deve ser codificada percentualmente quando necessário. Preserve as opções TLS exigidas pelo servidor; a aplicação não desabilita a verificação TLS nem remove parâmetros da connection string. `POSTGRES_*` e `INITIAL_ADMIN_*` não são necessários em produção. `localhost` dentro do container é a própria aplicação e não será aceito como banco externo.
 
-O Compose padrão prepara automaticamente o banco somente quando `ALLOW_LOCAL_HTTP=true` e `APP_URL` aponta para HTTP em loopback. Nessa situação aplica migrações e cria a conta inicial apenas se não houver usuários. Credenciais `INITIAL_ADMIN_*` são entregues somente ao serviço temporário `init`. Veja [início rápido](inicio-rapido.md).
-
-Em produção, mantenha `ALLOW_LOCAL_HTTP=false`. Antes de iniciar a aplicação, revise e aplique migrações explicitamente:
+Antes da primeira publicação, crie o banco e as permissões no servidor PostgreSQL. Faça backup antes de mudanças relevantes, revise o SQL das migrações e aplique explicitamente:
 
 ```sh
-docker compose up -d db
-docker compose -f compose.yml -f compose.tools.yml build tools
-docker compose -f compose.yml -f compose.tools.yml run --rm tools --bun run db:migrate
+docker compose build tools
+docker compose run --rm tools db:migrate
 ```
 
-Provisione a primeira conta pelo comando `users:create` do mesmo serviço `tools`, enviando JSON por entrada padrão conforme [autenticação](autenticacao.md). Não coloque senhas em argumentos. Depois execute `docker compose up --build -d`. O serviço `init` não modifica o banco em produção.
+Crie a primeira conta administradora enviando JSON pela entrada padrão. Exemplo PowerShell, sem senha no histórico ou nos argumentos:
+
+```powershell
+$credential = Get-Credential -Message 'E-mail e senha da primeira conta administradora'
+@{
+  name = 'Administrador responsável'
+  email = $credential.UserName
+  password = $credential.GetNetworkCredential().Password
+  role = 'admin'
+} | ConvertTo-Json -Compress | docker compose run --rm -T tools users:create
+Remove-Variable credential
+```
+
+Em Bash, solicite a senha sem eco e produza o JSON com uma ferramenta local de sua confiança; envie-o a `docker compose run --rm -T tools users:create`. O formato é `{ "name": "...", "email": "...", "password": "...", "role": "admin" }`. Não grave senhas em arquivos versionados.
+
+Depois execute o comando normal de subida. Para verificar sem iniciar a aplicação:
+
+```sh
+docker compose build init
+docker compose run --rm init
+```
+
+A verificação termina com código diferente de zero e orientação de correção quando faltar configuração, conexão, migração ou administrador. Quando Infoconv estiver habilitado, também verifica variáveis, chaves independentes e leitura/formato dos certificados. **Não faz consultas ao SERPRO.** Banco sem schema, permissões insuficientes e divergência de migrações exigem intervenção do operador; não há migração automática em produção.
+
+## Rede, publicação e segredos
+
+A aplicação publica apenas `127.0.0.1:${APP_PORT:-3000}` no host. Configure o proxy reverso com certificado TLS válido encaminhando para essa porta. `APP_URL` deve corresponder à origem HTTPS pública exata. O serviço de banco local não é iniciado em produção; aplicação, verificação e ferramentas possuem rede com saída para o servidor externo.
+
+O pré-deploy verifica acesso do container ao banco e arquivos configurados, mas não comprova o certificado do proxy público, backups ou habilitação contratual. Verifique esses itens antes da publicação. O endpoint `/api/health` confirma somente disponibilidade HTTP.
+
+Credenciais continuam no `.env`, fora do Git e do build. Certificados em `INFOCONV_CERTIFICATES_DIR` são montados somente para leitura. Consulte [Infoconv](infoconv.md) para contrato, limites, retenção e certificados. Desabilitar a fonte permite subir o sistema sem suas credenciais.
+
+## Alternar instalações, atualizar e recuperar
+
+Use instalações, segredos e bancos separados para desenvolvimento e produção. Se reutilizar uma pasta/um projeto Compose para trocar de ambiente, execute `docker compose down` **antes** de alterar o seletor; isso encerra o banco local que já estava em execução, preservando o volume. Depois ajuste as configurações e execute novamente `docker compose up --build -d`. O Compose não migra dados entre bancos.
+
+Para atualizar produção: faça backup, valide a imagem em homologação, revise/aplique migrações pelo serviço `tools` e suba a versão aprovada. Não remova volumes nem use `down -v` como atualização. Em falha, retorne à imagem anterior compatível com o schema ou restaure um backup testado em ambiente isolado.
+
+Defina rotina de backup protegido e teste de restauração conforme a política municipal; evite incluir o conteúdo de `consultation_cache` nos backups para respeitar a retenção de sete dias. Auditoria e logs técnicos permanecem separados. Nunca use produção para testes.
