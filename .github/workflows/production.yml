@@ -118,6 +118,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: production
+      url: ${{ vars.PRODUCTION_URL }}
     permissions:
       contents: read
       packages: read

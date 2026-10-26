@@ -2,6 +2,8 @@
 
 A esteira está preparada para **runner próprio Linux na VM que executa os containers de produção**. Se o runner ficar em outra máquina, configure o acesso ao Docker do destino antes de habilitar o deploy; o script atual utiliza o Docker local do runner.
 
+Para a instalação da Prefeitura em AlmaLinux amd64 com Nginx, consulte o [roteiro específico da VM](almalinux-nginx.md).
+
 ## Fluxo
 
 - `CI`: pull requests e pushes na `main`; formatação, lint, testes Bun, build, tipagem e Playwright/Chromium com PostgreSQL isolado. Não utiliza segredos de produção nem runner interno.
@@ -33,12 +35,13 @@ Em **Settings → Environments**, crie `production` e limite deployments à bran
 
 Em **Settings → Secrets and variables → Actions → Variables**, configure variáveis de **repositório** (não apenas de environment):
 
-| Nome                         | Valor                                                                            |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `PRODUCTION_DEPLOY_ENABLED`  | Inicialmente `false`; mudar para `true` somente após preparar o servidor         |
-| `PRODUCTION_DEPLOY_DIR`      | Pasta absoluta provisionada no servidor; exemplo `/opt/pinda-dados`              |
-| `PRODUCTION_PLATFORM`        | `linux/amd64` (padrão) ou `linux/arm64`; deve corresponder ao runner de produção |
-| `PRODUCTION_COMPOSE_PROJECT` | Nome estável da instalação, padrão `pinda-dados`                                 |
+| Nome                         | Valor                                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `PRODUCTION_DEPLOY_ENABLED`  | Inicialmente `false`; mudar para `true` somente após preparar o servidor                            |
+| `PRODUCTION_DEPLOY_DIR`      | Pasta absoluta provisionada no servidor; exemplo `/opt/pinda-dados`                                 |
+| `PRODUCTION_URL`             | URL HTTPS pública, usada na identificação do environment; não substitui APP_URL no .env do servidor |
+| `PRODUCTION_PLATFORM`        | `linux/amd64` (padrão) ou `linux/arm64`; deve corresponder ao runner de produção                    |
+| `PRODUCTION_COMPOSE_PROJECT` | Nome estável da instalação, padrão `pinda-dados`                                                    |
 
 A compilação usa runner hospedado no GitHub compatível com a arquitetura escolhida. O workflow suporta imagens Linux amd64 e arm64; só é construída a arquitetura selecionada.
 
