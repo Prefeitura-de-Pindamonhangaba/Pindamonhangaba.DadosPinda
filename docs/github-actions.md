@@ -15,7 +15,11 @@ Publicar imagens não significa publicar o sistema. O resumo do workflow informa
 
 Confirme primeiro sistema operacional Linux, arquitetura (`amd64` ou `arm64`), domínio HTTPS e se o runner ficará no próprio host dos containers. Instale Docker, Docker Compose **2.24.4 ou posterior**, Bash, Python 3 e utilitários `flock`/`realpath`. Mantenha o runner atualizado para executar as versões das actions fixadas por SHA.
 
-Em **Settings → Actions → Runners → New self-hosted runner**, siga as instruções atuais do GitHub para Linux. Adicione o label `pinda-dados-production` e instale como serviço. O usuário do runner precisa acessar Docker e a pasta da aplicação. Use runner dedicado a deploys confiáveis; PRs e forks nunca devem executar jobs nele. No GitHub, limite o grupo de runners ao workflow de produção da `main`, quando essa configuração estiver disponível.
+Na organização, crie um **runner group** chamado `pinda-dados-production`, limitado a este repositório e exclusivamente ao workflow `Prefeitura-de-Pindamonhangaba/Pindamonhangaba.DadosPinda/.github/workflows/production.yml@refs/heads/main`. Permita o acesso do repositório público somente com essa restrição de workflow. Não libere todos os workflows nem a CI de PRs: código de forks não deve executar na máquina que acessa a rede e os segredos de produção.
+
+Cadastre o runner Linux na **organização**, atribua-o a esse grupo e adicione também o label `pinda-dados-production`; siga as instruções atuais em **Settings → Actions → Runners → New self-hosted runner**. Instale como serviço e mantenha-o atualizado. O usuário do runner precisa acessar Docker e a pasta privada da aplicação. O workflow seleciona tanto o grupo quanto os labels.
+
+Se a organização não permitir restringir o grupo ao workflow/referência acima, não cadastre um runner persistente diretamente neste repositório público. Nesse caso, vamos definir juntos uma implantação por repositório privado de operações ou outra solução isolada antes de habilitar a produção. A restrição do environment não substitui a restrição do runner group.
 
 O host precisa alcançar GitHub/GHCR e o PostgreSQL externo. Não é necessário abrir SSH ao GitHub. O proxy HTTPS deve encaminhar para a porta local da aplicação, normalmente `127.0.0.1:3000`.
 
@@ -73,3 +77,5 @@ Para recuperar, selecione uma release anterior conhecida e compatível com o sch
 - [GitHub: publicação de imagens Docker](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images).
 - [GitHub: environments e regras de implantação](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
 - [GitHub: uso seguro de Actions](https://docs.github.com/en/actions/reference/security/secure-use).
+
+- [GitHub: restringir acesso a grupos de runners](https://docs.github.com/en/enterprise-cloud@latest/actions/how-tos/manage-runners/self-hosted-runners/manage-access).

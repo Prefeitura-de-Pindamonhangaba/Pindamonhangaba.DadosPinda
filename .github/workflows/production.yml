@@ -112,7 +112,9 @@ jobs:
     name: Aplicar no servidor da Prefeitura
     needs: [configuration, images]
     if: needs.configuration.outputs.deploy_enabled == 'true'
-    runs-on: [self-hosted, Linux, pinda-dados-production]
+    runs-on:
+      group: pinda-dados-production
+      labels: [self-hosted, Linux, pinda-dados-production]
     timeout-minutes: 15
     environment:
       name: production
