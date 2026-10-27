@@ -16,6 +16,7 @@
   "scripts": {
     "references:seed": "bun scripts/seed-references.ts",
     "cache:purge": "bun scripts/purge-cache.ts",
+    "users:keycloak": "bun scripts/manage-keycloak.ts",
     "users:create": "bun scripts/create-user.ts",
     "users:manage": "bun scripts/manage-user.ts",
     "test:e2e": "bunx playwright test",

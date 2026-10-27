@@ -6,6 +6,8 @@
 2. [Autenticação e permissões](autenticacao.md): papéis, sessões e administração das contas.
 3. [Infoconv](infoconv.md): habilitação, certificados, configurações, cache, consumo e significado dos códigos.
 
+[Keycloak e login institucional](keycloak.md): cliente OIDC, configuração no .env, vínculos e limites de sessão.
+
 ## Desenvolver e contribuir
 
 - [Guia de contribuição](../CONTRIBUTING.md): fluxo de desenvolvimento e revisão.

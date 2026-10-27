@@ -1,3 +1,4 @@
+import { keycloakSignInSchema } from "@/modules/auth/schemas/keycloak-schema";
 import "server-only";
 import { getAuth } from "@/shared/lib/auth/server";
 import { parseAuthEnvironment } from "@/shared/lib/env";
@@ -18,7 +19,14 @@ const publicEndpoints = new Set([
 
 export async function handleAuthRequest(request: Request) {
   const path = new URL(request.url).pathname;
-  if (!publicEndpoints.has(path))
+  const sso =
+    path === "/api/auth/sign-in/social" ||
+    path === "/api/auth/callback/keycloak";
+  if (sso && process.env.KEYCLOAK_ENABLED !== "true")
+    return Response.json({ message: "Recurso indisponível." }, { status: 404 });
+  if (sso && request.method !== (path.endsWith("/keycloak") ? "GET" : "POST"))
+    return Response.json({ message: "Método não permitido." }, { status: 405 });
+  if (!publicEndpoints.has(path) && !sso)
     return Response.json({ message: "Recurso indisponível." }, { status: 404 });
   try {
     if (request.method === "POST") {
@@ -28,6 +36,16 @@ export async function handleAuthRequest(request: Request) {
           { message: "Origem não autorizada." },
           { status: 403 },
         );
+      if (path === "/api/auth/sign-in/social") {
+        const parsed = keycloakSignInSchema.safeParse(
+          await readJson(request.clone()),
+        );
+        if (!parsed.success)
+          return Response.json(
+            { message: "Solicitação de login inválida." },
+            { status: 400 },
+          );
+      }
       if (path === "/api/auth/sign-in/email") {
         const text = await request.clone().text();
         let payload: unknown;

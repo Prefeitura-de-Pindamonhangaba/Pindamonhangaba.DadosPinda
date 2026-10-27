@@ -3,6 +3,7 @@ import { resolveDeployment } from "../src/shared/lib/deployment/config";
 const allowed = [
   "db:migrate",
   "users:create",
+  "users:keycloak",
   "users:manage",
   "cache:purge",
   "references:seed",

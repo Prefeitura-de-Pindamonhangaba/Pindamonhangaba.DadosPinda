@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { authClient } from "@/shared/lib/auth/client";
 import { useHydrated } from "@/shared/lib/auth/use-hydrated";
 import { loginSchema } from "@/modules/auth/schemas/login-schema";
@@ -10,7 +10,13 @@ import {
   InstitutionalFooter,
 } from "@/shared/components/institutional-header";
 
-export function LoginView() {
+export function LoginView({
+  keycloakEnabled = false,
+}: {
+  keycloakEnabled?: boolean;
+}) {
+  const search = useSearchParams();
+  const ssoError = search.get("sso") === "error" || search.has("error");
   const router = useRouter();
   const hydrated = useHydrated();
   const [error, setError] = useState("");
@@ -53,6 +59,24 @@ export function LoginView() {
     }
   }
 
+  async function signInWithKeycloak() {
+    setPending(true);
+    setError("");
+    try {
+      const result = await authClient.signIn.social({
+        provider: "keycloak",
+        callbackURL: "/",
+        errorCallbackURL: "/login?sso=error",
+      });
+      if (result.error) throw new Error("sso");
+    } catch {
+      setError(
+        "Não foi possível entrar com a conta institucional. Tente novamente ou entre em contato com o DSI.",
+      );
+      setPending(false);
+    }
+  }
+
   return (
     <>
       <InstitutionalHeader />
@@ -72,7 +96,20 @@ export function LoginView() {
         </div>
         <section className="login-panel" aria-labelledby="login-title">
           <h2 id="login-title">Entrar no sistema</h2>
-          <p>Informe suas credenciais de acesso.</p>
+          {keycloakEnabled && (
+            <>
+              <p>Utilize sua conta institucional da Prefeitura.</p>
+              <button
+                className="button"
+                type="button"
+                onClick={signInWithKeycloak}
+                disabled={pending || !hydrated}
+              >
+                Entrar com conta institucional
+              </button>
+            </>
+          )}
+          <p>Informe suas credenciais de acesso local.</p>
           <form onSubmit={handleSubmit} aria-busy={pending}>
             <label htmlFor="email">E-mail</label>
             <input
@@ -95,7 +132,10 @@ export function LoginView() {
               disabled={pending}
             />
             <p className="form-error" role="alert" aria-live="polite">
-              {error}
+              {error ||
+                (ssoError
+                  ? "Acesso institucional não autorizado ou indisponível. Entre em contato com o DSI."
+                  : "")}
             </p>
             <button
               className="button"

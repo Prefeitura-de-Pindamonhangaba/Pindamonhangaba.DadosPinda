@@ -1,3 +1,4 @@
+import { parseKeycloakEnvironment } from "@/modules/auth/services/keycloak-config";
 import { z } from "zod";
 
 export const environmentSchema = z
@@ -41,7 +42,11 @@ export function parseAuthEnvironment(
   const secret = z.string().min(32).safeParse(input.BETTER_AUTH_SECRET);
   if (!secret.success)
     throw new Error("Configuração de ambiente inválida: BETTER_AUTH_SECRET.");
-  return { ...base, BETTER_AUTH_SECRET: secret.data };
+  return {
+    ...base,
+    BETTER_AUTH_SECRET: secret.data,
+    keycloak: parseKeycloakEnvironment(input),
+  };
 }
 
 export function isLoopbackUrl(value: string) {

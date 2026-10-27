@@ -14,16 +14,25 @@ server {
     ssl_certificate_key /etc/pki/tls/private/pinda-dados.key;
     ssl_protocols TLSv1.2 TLSv1.3;
 
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header Connection "";
+    proxy_cache off;
+    proxy_buffering off;
+
+    # O callback contém authorization code e state na query string.
+    # Diagnóstico de autenticação permanece nos eventos sanitizados da aplicação.
+    location = /api/auth/callback/keycloak {
+        access_log off;
+        error_log /dev/null;
+        proxy_pass http://127.0.0.1:3000;
+    }
+
     location / {
         proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header Connection "";
-        proxy_cache off;
-        proxy_buffering off;
     }
 }

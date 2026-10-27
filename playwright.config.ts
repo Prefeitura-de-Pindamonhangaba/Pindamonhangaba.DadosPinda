@@ -33,6 +33,7 @@ export default defineConfig({
       DATABASE_URL: databaseUrl,
       BETTER_AUTH_SECRET: "isolated-e2e-only-secret-never-use-in-production",
       PLAYWRIGHT_TEST: "1",
+      KEYCLOAK_ENABLED: "false",
       INFOCONV_ENABLED: "false",
       INFOCONV_CERTIFICATE_PATH: "test-only-nonexistent.pem",
       INFOCONV_CERTIFICATE_PASSPHRASE: "",
