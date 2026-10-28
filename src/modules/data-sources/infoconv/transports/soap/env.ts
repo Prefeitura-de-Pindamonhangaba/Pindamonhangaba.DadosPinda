@@ -13,6 +13,7 @@ const officialWsdl = z.url().refine((value) => {
 });
 
 const schema = z.object({
+  INFOCONV_CERTIFICATE_FORMAT: z.enum(["auto", "pem", "pfx"]).default("auto"),
   INFOCONV_CERTIFICATE_PATH: z.string().min(1),
   INFOCONV_CERTIFICATE_PASSPHRASE: z.string().default(""),
   INFOCONV_REQUESTER_CPF: z.string().regex(/^\d{11}$/),
