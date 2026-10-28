@@ -17,6 +17,8 @@
 
 ## Publicar e manter
 
+- [Rede local com HTTPS](instalacao-rede-local.md): overlay Docker, proxy, certificados e login institucional nesta instalacao.
+
 - [AlmaLinux e Nginx](almalinux-nginx.md): VM da Prefeitura, SELinux, proxy e testes antes do DNS.
 - [GitHub Actions e produção](github-actions.md): CI, GHCR, runner próprio e preparação do servidor.
 - [Configuração e operação](operacao.md): containers, migrações, atualização e recuperação.

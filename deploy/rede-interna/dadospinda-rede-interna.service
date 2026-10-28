@@ -1,0 +1,14 @@
+[Unit]
+Description=Restringe o DadosPinda a rede interna 10.0.0.0/23
+Requires=docker.service
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/dadospinda-rede-interna start
+ExecStop=/usr/local/sbin/dadospinda-rede-interna stop
+
+[Install]
+WantedBy=docker.service

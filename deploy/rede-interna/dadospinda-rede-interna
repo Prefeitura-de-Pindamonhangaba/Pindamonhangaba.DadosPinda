@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+rule=(-p tcp ! -s 10.0.0.0/23 -m conntrack --ctdir ORIGINAL --ctorigdst 10.0.0.16 --ctorigdstport 3001 -m comment --comment dadospinda-rede-interna -j DROP)
+case "${1:-start}" in
+  start)
+    if ! /usr/sbin/iptables -w -C DOCKER-USER "${rule[@]}" 2>/dev/null; then
+      /usr/sbin/iptables -w -I DOCKER-USER 1 "${rule[@]}"
+    fi
+    ;;
+  stop)
+    if /usr/sbin/iptables -w -C DOCKER-USER "${rule[@]}" 2>/dev/null; then
+      /usr/sbin/iptables -w -D DOCKER-USER "${rule[@]}"
+    fi
+    ;;
+  *) exit 2 ;;
+esac
