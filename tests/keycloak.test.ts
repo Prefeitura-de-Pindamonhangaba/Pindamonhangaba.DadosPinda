@@ -96,3 +96,25 @@ test("início de SSO não aceita redirecionamentos externos, tokens do cliente o
       keycloakSignInSchema.safeParse({ ...valid, ...changed }).success,
     ).toBe(false);
 });
+
+test("HTTP no Keycloak exige opt-in e aplicação local em development; produção continua bloqueada", () => {
+  const local = {
+    ...config,
+    KEYCLOAK_ISSUER: "http://192.0.2.10:8081/realms/test",
+    KEYCLOAK_ALLOW_INSECURE_HTTP: "true",
+    COMPOSE_PROFILES: "development",
+    NODE_ENV: "production",
+    APP_URL: "http://localhost:3001",
+  };
+  expect(parseKeycloakEnvironment(local).enabled).toBe(true);
+  for (const changed of [
+    { KEYCLOAK_ALLOW_INSECURE_HTTP: "false" },
+    { COMPOSE_PROFILES: "production", NODE_ENV: "development" },
+    { APP_URL: "http://localhost.evil.example" },
+    { APP_URL: "http://192.0.2.20:3001" },
+    { APP_URL: "https://dados.example.org" },
+  ])
+    expect(() => parseKeycloakEnvironment({ ...local, ...changed })).toThrow(
+      "KEYCLOAK_ISSUER",
+    );
+});

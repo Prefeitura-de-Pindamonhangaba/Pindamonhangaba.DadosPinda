@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   agentRules: false,
   distDir: process.env.PLAYWRIGHT_TEST === "1" ? ".next-e2e" : ".next",
   poweredByHeader: false,
+  // O callback OIDC contém código temporário e state na query string.
+  logging: {
+    incomingRequests: { ignore: [/\/api\/auth\/callback\/keycloak/] },
+  },
   serverExternalPackages: ["soap"],
   async headers() {
     return [
