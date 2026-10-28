@@ -76,3 +76,7 @@ Ajuste credenciais conforme seu ambiente. O teste de navegador usa Edge instalad
 Referências: [Better Auth](https://better-auth.com/docs/installation), [Drizzle](https://better-auth.com/docs/adapters/drizzle), [sessões](https://better-auth.com/docs/concepts/session-management), [limites](https://better-auth.com/docs/concepts/rate-limit).
 
 Na instalação local via Compose, a primeira conta administradora é criada a partir de `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL` e `INITIAL_ADMIN_PASSWORD` somente quando o banco não possui usuários. Consulte o [início rápido](inicio-rapido.md).
+
+## Keycloak
+
+O login institucional opcional é configurado no `.env`. Veja [Keycloak](keycloak.md) para ativação, cliente, vinculação explícita dos usuários e comportamento de saída. Os papéis e a desativação continuam locais; autenticação não concede acesso automaticamente.

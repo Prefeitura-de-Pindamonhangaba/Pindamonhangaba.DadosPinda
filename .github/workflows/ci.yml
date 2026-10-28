@@ -2,7 +2,6 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
   workflow_call:
@@ -61,4 +60,8 @@ jobs:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
+      - name: Fluxo OIDC com provedor fictício
+        env:
+          KEYCLOAK_TEST_DATABASE_URL: ${{ env.AUTH_TEST_DATABASE_URL }}
+        run: bun test --timeout 30000 tests/keycloak-flow.test.ts
       - run: bun run test:e2e

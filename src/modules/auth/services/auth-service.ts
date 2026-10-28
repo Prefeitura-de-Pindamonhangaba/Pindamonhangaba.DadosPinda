@@ -1,3 +1,5 @@
+import { genericOAuth, keycloak } from "better-auth/plugins/generic-oauth";
+import { keycloakAccountId } from "./keycloak-config";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
@@ -18,11 +20,42 @@ export function createAuthService(
     baseURL: env.APP_URL,
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: [env.APP_URL],
+    onAPIError: { errorURL: `${env.APP_URL}/login` },
     database: drizzleAdapter(database, {
       provider: "pg",
       schema,
       transaction: true,
     }),
+    account: {
+      encryptOAuthTokens: true,
+      accountLinking: { enabled: false, disableImplicitLinking: true },
+    },
+    plugins: env.keycloak.enabled
+      ? [
+          genericOAuth({
+            config: [
+              {
+                ...keycloak({
+                  issuer: env.keycloak.issuer,
+                  clientId: env.keycloak.clientId,
+                  clientSecret: env.keycloak.clientSecret,
+                  pkce: true,
+                  disableSignUp: true,
+                  disableImplicitSignUp: true,
+                  overrideUserInfo: false,
+                  disableProviderLogout: true,
+                }),
+                requireIdTokenVerification: true,
+                accountSubject: ({ profile }) =>
+                  keycloakAccountId(
+                    env.keycloak.enabled ? env.keycloak.issuer : "",
+                    profile.sub,
+                  ),
+              },
+            ],
+          }),
+        ]
+      : [],
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
@@ -35,6 +68,19 @@ export function createAuthService(
       cookieCache: { enabled: false },
     },
     user: {
+      validateUserInfo: ({ source }) => {
+        if (source.oauth?.providerId !== "keycloak") return;
+        const profile = source.oauth.profile;
+        if (
+          !env.keycloak.enabled ||
+          profile?.iss !== env.keycloak.issuer ||
+          profile?.email_verified !== true
+        )
+          return {
+            error: "access_denied",
+            errorDescription: "Acesso institucional não autorizado.",
+          };
+      },
       additionalFields: {
         role: {
           type: "string",
