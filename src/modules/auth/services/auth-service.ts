@@ -57,7 +57,7 @@ export function createAuthService(
         ]
       : [],
     emailAndPassword: {
-      enabled: true,
+      enabled: false,
       disableSignUp: true,
       minPasswordLength: 12,
       maxPasswordLength: 128,
@@ -107,7 +107,7 @@ export function createAuthService(
       storage: "database",
       window: 60,
       max: 60,
-      customRules: { "/sign-in/email": { window: 60, max: 5 } },
+      customRules: { "/sign-in/social": { window: 60, max: 5 } },
     },
     databaseHooks: {
       session: {

@@ -1,3 +1,5 @@
+import { signInTestUser, testIssuer } from "./helpers/oidc-login";
+import { keycloakAccountId } from "../src/modules/auth/services/keycloak-config";
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -5,7 +7,11 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { eq, inArray, like, or, sql } from "drizzle-orm";
 import { provisionUser } from "../src/modules/users/services/provision-user-service";
 import { createUserRepository } from "../src/modules/users/models/user-repository";
-import { user, rateLimit } from "../src/modules/auth/models/auth-schema";
+import {
+  account,
+  user,
+  rateLimit,
+} from "../src/modules/auth/models/auth-schema";
 import { auditEvent } from "../src/modules/audit/models/audit-schema";
 import {
   consultationAudit,
@@ -64,11 +70,7 @@ const payload = (document = cachedDocument) => ({
 });
 
 async function login(request: APIRequestContext, role = "operator") {
-  const response = await request.post("/api/auth/sign-in/email", {
-    headers: { origin },
-    data: { email: users[role].email, password },
-  });
-  expect(response.status()).toBe(200);
+  await signInTestUser(request, users[role].id);
 }
 
 test.beforeAll(async () => {
@@ -85,6 +87,11 @@ test.beforeAll(async () => {
       password,
     });
     users[role] = { id: created.id, email, role };
+    await db.insert(account).values({
+      userId: created.id,
+      providerId: "keycloak",
+      accountId: keycloakAccountId(testIssuer, created.id),
+    });
   }
   cacheKeys.push(cachedKey);
 });
@@ -526,7 +533,6 @@ test("administração de servidores e domínios registra alterações e respeita
       name: "Servidor importado fictício",
       email: managedEmail,
       role: "operator",
-      password,
     },
   });
   expect(created.status()).toBe(201);
@@ -596,7 +602,7 @@ test("administração de servidores e domínios registra alterações e respeita
   );
 });
 
-test("troca de senha valida a atual e mantém as credenciais fora da resposta", async ({
+test("troca de senha local permanece bloqueada mesmo com sessão válida", async ({
   request,
 }) => {
   await login(request, "viewer");
@@ -608,13 +614,6 @@ test("troca de senha valida a atual e mantém as credenciais fora da resposta", 
       revokeOtherSessions: true,
     },
   });
-  expect(changed.status()).toBe(200);
+  expect(changed.status()).toBe(404);
   expect(await changed.text()).not.toContain(password);
-  const events = await db
-    .select()
-    .from(auditEvent)
-    .where(eq(auditEvent.userId, users.viewer.id));
-  expect(events.map((event) => event.action)).toContain(
-    "user.credentials_updated",
-  );
 });

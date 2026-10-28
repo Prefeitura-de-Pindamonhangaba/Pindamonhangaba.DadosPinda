@@ -22,6 +22,12 @@ Abra http://localhost:3000. O Compose cria o PostgreSQL local, aguarda a conexã
 
 Para outra porta, ajuste `APP_PORT` e a porta de `APP_URL` juntos, sem editar o Compose.
 
+## Login institucional
+
+O Keycloak é a única forma de login. Configure `KEYCLOAK_ENABLED=true`, `KEYCLOAK_ISSUER`, `KEYCLOAK_CLIENT_ID` e `KEYCLOAK_CLIENT_SECRET` no `.env`, com o cliente e o callback correspondentes a `APP_URL`. Vincule a conta inicial ao `sub` do administrador conforme [Keycloak](keycloak.md#provisionamento-e-autorização). Essa vinculação explícita impede que a coincidência de e-mail conceda acesso.
+
+A senha inicial ainda é exigida pelo provisionamento compatível com instalações anteriores, mas não permite login. Não use a senha institucional nesse campo. Senhas de acesso e recuperação são gerenciadas no Keycloak. Com Keycloak desabilitado, a apresentação exibe indisponibilidade e não permite autenticação.
+
 ## Conferir ou reiniciar
 
 ```sh

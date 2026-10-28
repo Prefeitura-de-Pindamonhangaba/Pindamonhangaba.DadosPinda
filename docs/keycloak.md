@@ -69,7 +69,9 @@ O callback carrega authorization code e state na URL. O modelo Nginx desabilita 
 
 A assinatura do ID token é verificada pelo SDK usando JWKS do discovery; são verificados audience, issuer e nonce. A aplicação ainda confere o issuer configurado e e-mail verificado. Tokens OAuth persistidos são criptografados pelo Better Auth com `BETTER_AUTH_SECRET`; mantenha esse segredo protegido e estável. State e PKCE são gerenciados pelo SDK, sem implementação criptográfica própria.
 
-O login local permanece habilitado para contingência e a senha local continua independente do Keycloak. O botão institucional aparece somente quando a configuração está habilitada. Falhas são apresentadas em português sem reproduzir mensagens do provider.
+O Keycloak é a única forma de login. A página pública apresenta a plataforma e um único botão “Login”, que inicia o fluxo institucional. Login por e-mail/senha, cadastro público e troca ou recuperação de senha local não são expostos. A configuração `emailAndPassword` do SDK também permanece desabilitada, além do bloqueio dos endpoints no controller.
+
+Com `KEYCLOAK_ENABLED=false`, o botão fica desabilitado e a tela informa indisponibilidade; não há acesso alternativo por senha. Configure e vincule pelo menos um administrador antes de usar a instalação. “Minha conta” orienta que senha e recuperação são gerenciadas pelo acesso institucional. Falhas são apresentadas em português sem reproduzir mensagens do provider.
 
 **Sair encerra e revoga a sessão do Pinda Dados.** Nesta etapa a sessão SSO global do Keycloak é preservada, evitando encerrar outros sistemas institucionais. Entrar novamente pode reutilizar a sessão já aberta no Keycloak. Backchannel logout, sincronização de grupos/papéis e revogação remota imediata não estão implementados.
 
@@ -85,6 +87,6 @@ bun test --timeout 30000 tests/keycloak-flow.test.ts
 
 O teste utiliza um provider fictício com tokens RSA assinados e JWKS localmente simulados, sem conexão a Keycloak real. Verifica PKCE, vínculo explícito, permissões preservadas, tokens criptografados, replay, nonce, issuer, audience, expiração, e-mail não verificado e usuários não autorizados/desativados. A CI executa esse teste no mesmo PostgreSQL efêmero reservado ao job de navegador, antes do Playwright.
 
-A homologação com o realm real ainda deve confirmar login, conta sem vínculo, conta desativada, recuperação local, logout e URLs de retorno. Nenhuma instância ou cliente Keycloak é criado automaticamente pela aplicação.
+A homologação com o realm real ainda deve confirmar login, conta sem vínculo, conta desativada, recuperação pelo Keycloak, logout e URLs de retorno. Nenhuma instância ou cliente Keycloak é criado automaticamente pela aplicação.
 
 Referências: [Better Auth Generic OAuth](https://better-auth.com/docs/plugins/generic-oauth) e [Keycloak OpenID Connect](https://www.keycloak.org/securing-apps/oidc-layers).

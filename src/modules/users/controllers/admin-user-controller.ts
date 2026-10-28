@@ -6,10 +6,10 @@ import {
   RequestError,
   safeRequestError,
 } from "@/shared/lib/security/request";
-import { provisionUserSchema } from "@/modules/auth/schemas/login-schema";
 import { UserManagementError } from "../models/admin-user-repository";
 import {
   updateUserSchema,
+  createUserProfileSchema,
   userProfileImportSchema,
 } from "../services/admin-user-service";
 import {
@@ -62,16 +62,13 @@ export async function handleAdminUsers(request: Request) {
       if (imported.success) {
         const result = await importManagedUsers(imported.data, principal.id);
         return privateJson({
-          message: `${result.created} conta(s) criada(s) desativada(s); ${result.skipped} já existente(s). Defina senha e ative individualmente.`,
+          message: `${result.created} conta(s) criada(s) desativada(s); ${result.skipped} já existente(s). Vincule ao Keycloak e ative individualmente.`,
           ...result,
         });
       }
-      const parsed = provisionUserSchema.safeParse(body);
+      const parsed = createUserProfileSchema.safeParse(body);
       if (!parsed.success)
-        throw new RequestError(
-          400,
-          "Verifique nome, e-mail, papel e senha de 12 a 128 caracteres.",
-        );
+        throw new RequestError(400, "Verifique nome, e-mail e papel.");
       return privateJson(
         await provisionManagedUser(parsed.data, principal.id),
         201,

@@ -9,15 +9,15 @@ import {
   exportUserProfiles,
   type userProfileImportSchema,
   type updateUserSchema,
+  type createUserProfileSchema,
 } from "@/modules/users/services/admin-user-service";
-import type { provisionUserSchema } from "@/modules/auth/schemas/login-schema";
 import type { z } from "zod";
 
 export function listManagedUsers() {
   return listAdminUsers(createAdminUserRepository(getDatabase()));
 }
 export function provisionManagedUser(
-  input: z.infer<typeof provisionUserSchema>,
+  input: z.infer<typeof createUserProfileSchema>,
   actorId: string,
 ) {
   return createAdminUser(

@@ -9,6 +9,10 @@ export function listAdminUsers(
   return repository.list();
 }
 
+export const createUserProfileSchema = provisionUserSchema.omit({
+  password: true,
+});
+
 export const updateUserSchema = z.object({
   id: z.uuid(),
   name: z.string().trim().min(2).max(120),
@@ -18,7 +22,6 @@ export const updateUserSchema = z.object({
     .transform((value) => value.toLowerCase()),
   role: z.enum(["viewer", "operator", "admin"]),
   enabled: z.boolean(),
-  password: z.string().min(12).max(128).optional(),
 });
 export const userProfileImportSchema = z.object({
   action: z.literal("import"),
@@ -30,12 +33,14 @@ export const userProfileImportSchema = z.object({
 
 export async function createAdminUser(
   repository: ReturnType<typeof createAdminUserRepository>,
-  input: z.infer<typeof provisionUserSchema>,
+  input: z.infer<typeof createUserProfileSchema>,
   actorId: string,
 ) {
-  const { password, ...profile } = input;
   return repository.create(
-    { ...profile, passwordHash: await hashPassword(password) },
+    {
+      ...input,
+      passwordHash: await hashPassword(randomBytes(32).toString("base64url")),
+    },
     actorId,
   );
 }
@@ -44,14 +49,7 @@ export async function updateAdminUser(
   input: z.infer<typeof updateUserSchema>,
   actorId: string,
 ) {
-  const { password, ...profile } = input;
-  await repository.update(
-    {
-      ...profile,
-      passwordHash: password ? await hashPassword(password) : undefined,
-    },
-    actorId,
-  );
+  await repository.update(input, actorId);
 }
 
 export async function importUserProfiles(
