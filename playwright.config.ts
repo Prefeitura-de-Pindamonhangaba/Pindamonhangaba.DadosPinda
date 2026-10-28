@@ -20,7 +20,7 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3101",
     browserName: "chromium",
-    channel: "msedge",
+    channel: process.env.PLAYWRIGHT_BROWSER_CHANNEL || "msedge",
     trace: "off",
   },
   webServer: {

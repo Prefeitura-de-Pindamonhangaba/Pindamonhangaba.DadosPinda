@@ -1,0 +1,11 @@
+# Overlay de release: usa imagens publicadas, sem compilar no servidor.
+services:
+  app:
+    build: !reset null
+    image: ${APP_IMAGE:?Informe APP_IMAGE por digest}
+  init:
+    build: !reset null
+    image: ${TOOLS_IMAGE:?Informe TOOLS_IMAGE por digest}
+  tools:
+    build: !reset null
+    image: ${TOOLS_IMAGE:?Informe TOOLS_IMAGE por digest}

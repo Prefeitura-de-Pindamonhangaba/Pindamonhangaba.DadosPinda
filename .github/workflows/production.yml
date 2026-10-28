@@ -1,0 +1,160 @@
+name: Produção
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pinda-dados-production
+  cancel-in-progress: false
+
+jobs:
+  configuration:
+    name: Conferir origem e configuração
+    runs-on: ubuntu-24.04
+    outputs:
+      image: ${{ steps.config.outputs.image }}
+      platform: ${{ steps.config.outputs.platform }}
+      build_runner: ${{ steps.config.outputs.build_runner }}
+      deploy_enabled: ${{ steps.config.outputs.deploy_enabled }}
+    steps:
+      - id: config
+        env:
+          PLATFORM: ${{ vars.PRODUCTION_PLATFORM || 'linux/amd64' }}
+          DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
+          DEPLOY_DIR: ${{ vars.PRODUCTION_DEPLOY_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'Execute este workflow exclusivamente na main.' >&2; exit 1; }
+          case "$PLATFORM" in
+            linux/amd64) runner=ubuntu-24.04 ;;
+            linux/arm64) runner=ubuntu-24.04-arm ;;
+            *) echo 'PRODUCTION_PLATFORM deve ser linux/amd64 ou linux/arm64.' >&2; exit 1 ;;
+          esac
+          if [[ "$DEPLOY_ENABLED" == true ]]; then
+            [[ "$DEPLOY_DIR" == /* && "$DEPLOY_DIR" != / ]] || { echo 'Configure PRODUCTION_DEPLOY_DIR com uma pasta absoluta do servidor.' >&2; exit 1; }
+          fi
+          printf 'image=ghcr.io/%s\nplatform=%s\nbuild_runner=%s\ndeploy_enabled=%s\n' "${GITHUB_REPOSITORY,,}" "$PLATFORM" "$runner" "$DEPLOY_ENABLED" >> "$GITHUB_OUTPUT"
+          if [[ "$DEPLOY_ENABLED" != true ]]; then
+            echo 'Publicação das imagens habilitada; deploy no servidor ainda desabilitado. Configure o runner, o environment production e PRODUCTION_DEPLOY_ENABLED em conjunto com a equipe.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  checks:
+    name: Verificações antes da publicação
+    needs: configuration
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  images:
+    name: Publicar imagens no GHCR
+    needs: [configuration, checks]
+    runs-on: ${{ needs.configuration.outputs.build_runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      app: ${{ steps.references.outputs.app }}
+      tools: ${{ steps.references.outputs.tools }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Aplicação
+        id: app
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runner
+          platforms: ${{ needs.configuration.outputs.platform }}
+          push: true
+          tags: ${{ needs.configuration.outputs.image }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha,scope=app-${{ needs.configuration.outputs.platform }}
+          cache-to: type=gha,mode=max,scope=app-${{ needs.configuration.outputs.platform }}
+      - name: Verificação e ferramentas
+        id: tools
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: tooling
+          platforms: ${{ needs.configuration.outputs.platform }}
+          push: true
+          tags: ${{ needs.configuration.outputs.image }}:tools-sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=app-${{ needs.configuration.outputs.platform }}
+      - id: references
+        env:
+          IMAGE: ${{ needs.configuration.outputs.image }}
+          APP_DIGEST: ${{ steps.app.outputs.digest }}
+          TOOLS_DIGEST: ${{ steps.tools.outputs.digest }}
+        run: |
+          printf 'app=%s@%s\ntools=%s@%s\n' "$IMAGE" "$APP_DIGEST" "$IMAGE" "$TOOLS_DIGEST" >> "$GITHUB_OUTPUT"
+          printf 'Imagens publicadas para o commit %s. A publicação de imagens não significa deploy no servidor.\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'APP_IMAGE=%s@%s\nTOOLS_IMAGE=%s@%s\n' "$IMAGE" "$APP_DIGEST" "$IMAGE" "$TOOLS_DIGEST" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Aplicar no servidor da Prefeitura
+    needs: [configuration, images]
+    if: needs.configuration.outputs.deploy_enabled == 'true'
+    runs-on:
+      group: pinda-dados-production
+      labels: [self-hosted, Linux, pinda-dados-production]
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Conferir pasta privada antes do checkout
+        env:
+          DEPLOY_DIR: ${{ vars.PRODUCTION_DEPLOY_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_DIR" == /* && -d "$DEPLOY_DIR" ]] || { echo 'Provisione PRODUCTION_DEPLOY_DIR antes do deploy.' >&2; exit 1; }
+          target="$(realpath "$DEPLOY_DIR")"
+          workspace="$(realpath -m "$GITHUB_WORKSPACE")"
+          if [[ "$target" == / || "$target/" == "$workspace/"* || "$workspace/" == "$target/"* ]]; then
+            echo 'A pasta privada precisa ficar fora do workspace do runner e de seus diretórios ancestrais.' >&2
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Isolar credenciais temporárias do registry
+        shell: bash
+        run: |
+          printf 'DOCKER_CONFIG=%s/pinda-dados-docker-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pré-deploy e ativação
+        env:
+          DEPLOY_DIR: ${{ vars.PRODUCTION_DEPLOY_DIR }}
+          DEPLOY_PROJECT: ${{ vars.PRODUCTION_COMPOSE_PROJECT || 'pinda-dados' }}
+          DEPLOY_PLATFORM: ${{ needs.configuration.outputs.platform }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          APP_IMAGE: ${{ needs.images.outputs.app }}
+          TOOLS_IMAGE: ${{ needs.images.outputs.tools }}
+        run: bash scripts/deploy-production.sh
