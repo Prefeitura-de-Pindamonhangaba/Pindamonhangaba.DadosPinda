@@ -1,7 +1,7 @@
 x-infoconv-files: &infoconv-files
   - type: bind
     source: ${INFOCONV_CERTIFICATE_HOST_PATH:?Defina INFOCONV_CERTIFICATE_HOST_PATH}
-    target: /run/secrets/infoconv.pem
+    target: /run/secrets/${INFOCONV_CERTIFICATE_FILENAME:-infoconv.pem}
     read_only: true
   - type: bind
     source: ${INFOCONV_CA_HOST_PATH:?Defina INFOCONV_CA_HOST_PATH}
@@ -13,7 +13,8 @@ services:
     environment:
       INFOCONV_ENABLED: ${INFOCONV_ENABLED:-false}
       INFOCONV_TRANSPORT: ${INFOCONV_TRANSPORT:-soap}
-      INFOCONV_CERTIFICATE_PATH: /run/secrets/infoconv.pem
+      INFOCONV_CERTIFICATE_PATH: /run/secrets/${INFOCONV_CERTIFICATE_FILENAME:-infoconv.pem}
+      INFOCONV_CERTIFICATE_FORMAT: ${INFOCONV_CERTIFICATE_FORMAT:-auto}
       INFOCONV_CERTIFICATE_PASSPHRASE: ${INFOCONV_CERTIFICATE_PASSPHRASE:-}
       INFOCONV_REQUESTER_CPF: ${INFOCONV_REQUESTER_CPF:?Defina INFOCONV_REQUESTER_CPF}
       INFOCONV_CPF_WSDL: ${INFOCONV_CPF_WSDL:?Defina INFOCONV_CPF_WSDL}
@@ -28,6 +29,14 @@ services:
       INFOCONV_MONTHLY_LIMIT_CNPJ: ${INFOCONV_MONTHLY_LIMIT_CNPJ:-}
     volumes: *infoconv-files
   init:
+    environment:
+      INFOCONV_CERTIFICATE_PATH: /run/secrets/${INFOCONV_CERTIFICATE_FILENAME:-infoconv.pem}
+      INFOCONV_CERTIFICATE_FORMAT: ${INFOCONV_CERTIFICATE_FORMAT:-auto}
+      INFOCONV_CA_PATH: /run/secrets/infoconv-ca.pem
     volumes: *infoconv-files
   tools:
+    environment:
+      INFOCONV_CERTIFICATE_PATH: /run/secrets/${INFOCONV_CERTIFICATE_FILENAME:-infoconv.pem}
+      INFOCONV_CERTIFICATE_FORMAT: ${INFOCONV_CERTIFICATE_FORMAT:-auto}
+      INFOCONV_CA_PATH: /run/secrets/infoconv-ca.pem
     volumes: *infoconv-files

@@ -21,8 +21,9 @@ As configurações hard coded usadas pela integração foram transferidas para o
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `INFOCONV_ENABLED`                | Habilita chamadas reais; padrão `false` em novas instalações                                                     |
 | `INFOCONV_TRANSPORT`              | Seleciona o transporte; padrão `soap`, único protocolo atualmente implementado                                   |
-| `INFOCONV_CERTIFICATE_PATH`       | Caminho do PEM contendo certificado, cadeia e chave privada                                                      |
-| `INFOCONV_CERTIFICATE_PASSPHRASE` | Senha do PEM, quando aplicável                                                                                   |
+| `INFOCONV_CERTIFICATE_FORMAT`     | `auto` (padrão), `pem` ou `pfx`; auto detecta extensões .pfx e .p12                                              |
+| `INFOCONV_CERTIFICATE_PATH`       | Caminho do PFX/PKCS#12 ou PEM com certificado e chave privada                                                    |
+| `INFOCONV_CERTIFICATE_PASSPHRASE` | Senha do PFX ou da chave PEM, quando aplicável                                                                   |
 | `INFOCONV_REQUESTER_CPF`          | Identificação técnica `CPFUsuario` utilizada pelo legado; confirmar sua vinculação ao convênio antes de produção |
 | `INFOCONV_CPF_WSDL`               | WSDL oficial CPF, documentado em `.env.example`                                                                  |
 | `INFOCONV_CNPJ_WSDL`              | WSDL oficial CNPJ, documentado em `.env.example`                                                                 |
@@ -34,7 +35,7 @@ As configurações hard coded usadas pela integração foram transferidas para o
 | `INFOCONV_MONTHLY_LIMIT`          | Franquia mensal conjunta CPF/CNPJ: 10.000, conforme contrato informado                                           |
 | `INFOCONV_MONTHLY_LIMIT_CPF`      | Teto mensal específico de CPF, se houver                                                                         |
 | `INFOCONV_MONTHLY_LIMIT_CNPJ`     | Teto mensal específico de CNPJ, se houver                                                                        |
-| `INFOCONV_CERTIFICATE_HOST_PATH`  | Arquivo PEM no host Docker                                                                                       |
+| `INFOCONV_CERTIFICATE_HOST_PATH`  | Arquivo PFX/PKCS#12 ou PEM no host Docker                                                                        |
 | `INFOCONV_CA_HOST_PATH`           | Cadeia de CAs no host Docker                                                                                     |
 
 A franquia informada é de **10.000 consultas mensais**, compartilhadas entre CPF e CNPJ. Ao atingir a franquia, novas chamadas ao SERPRO ficam bloqueadas até um administrador registrar uma liberação em **Auditoria de consultas → Franquia e liberação de excedente**. É necessário informar o total de consultas extras autorizado para o mês, uma justificativa e confirmar ciência da cobrança adicional. A liberação não é cumulativa: informar 200 substitui o total extra anterior por 200. Zero revoga o excedente para novas chamadas, sem desfazer chamadas já realizadas. O histórico preserva responsável, data, mês, quantidade e justificativa. A autorização expira automaticamente no mês seguinte; o cache válido continua acessível mesmo após atingir o teto.
@@ -45,7 +46,31 @@ Gere as duas chaves de forma independente com `randomBytes(32).toString('hex')`,
 
 O certificado foi verificado apenas para conectividade e leitura dos contratos. A habilitação do IP de saída, perfil, identificação técnica e condições comerciais continuam sendo as do convênio municipal. A [documentação de configuração do SERPRO](https://apicenter.estaleiro.serpro.gov.br/documentacao/infoconv/configuracoes/) descreve essas exigências.
 
-### Cadeias de confiança
+### Certificado PFX / PKCS#12
+
+O certificado de cliente pode ser fornecido diretamente em `.pfx` ou `.p12`, sem conversão para PEM e sem extrair a chave privada para disco. O runtime Bun carrega o PKCS#12 com a senha fornecida no `.env`.
+
+Exemplo para Docker com a pasta `certificates/` montada somente para leitura:
+
+```env
+INFOCONV_CERTIFICATE_FORMAT=pfx
+INFOCONV_CERTIFICATE_PATH=/run/secrets/infoconv.pfx
+INFOCONV_CERTIFICATE_PASSPHRASE=
+```
+
+Coloque seu arquivo em `certificates/infoconv.pfx` e preencha a senha real somente no `.env` privado. Executando Bun diretamente no host, use em `INFOCONV_CERTIFICATE_PATH` o caminho do arquivo no próprio host. Não envie o certificado ou sua senha para o repositório.
+
+`INFOCONV_CERTIFICATE_FORMAT` aceita `auto`, `pem` ou `pfx`. O padrão `auto` identifica `.pfx` e `.p12` pela extensão, sem diferenciar maiúsculas/minúsculas; nas demais extensões preserva o comportamento PEM. Use o formato explícito se o arquivo não tiver extensão usual. Instalações PEM existentes continuam funcionando sem mudança.
+
+No overlay opcional `compose.infoconv.yml`, configure também `INFOCONV_CERTIFICATE_FILENAME=infoconv.pfx` e `INFOCONV_CERTIFICATE_HOST_PATH` com o caminho do PFX no host. App, init e tools usam o mesmo arquivo/formato montado. Esse nome não é necessário quando usar apenas a pasta de certificados do Compose padrão.
+
+O pré-deploy abre o arquivo e valida formato, chave e senha antes de aceitar a configuração. Arquivos ausentes, conteúdo inválido e senha incorreta geram mensagens sanitizadas, sem expor material criptográfico. A validação local de datas PEM é preservada; a validade da identidade PFX é avaliada durante a negociação mTLS pelo servidor. Nenhuma chamada ao SERPRO é feita pelo pré-deploy.
+
+`INFOCONV_CA_PATH` continua apontando para um bundle de autoridades confiáveis em **PEM**, quando necessário para validar o servidor SERPRO. A cadeia da identidade presente no PFX não substitui a configuração de confiança do servidor. TLS mínimo 1.2, verificação do servidor e bloqueio de redirecionamentos permanecem habilitados.
+
+Referência do runtime: [Bun — TLS e PFX](https://bun.sh/reference/node/tls/createSecureContext).
+
+## Cadeias de confiança
 
 O runtime precisou das cadeias oficiais disponibilizadas na [documentação de certificação digital](https://apicenter.estaleiro.serpro.gov.br/documentacao/infoconv/certificado/). Para produção, use os certificados da Autoridade Certificadora Raiz Brasileira v10 e da Autoridade Certificadora do SERPRO SSLv1, conforme a referência. Converta os certificados públicos para PEM e forneça o bundle por `INFOCONV_CA_PATH`. Homologação utiliza suas próprias cadeias e não deve reutilizar credenciais de produção.
 

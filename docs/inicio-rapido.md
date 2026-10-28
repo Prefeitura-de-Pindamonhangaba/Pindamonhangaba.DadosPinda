@@ -40,3 +40,5 @@ Altere o seletor para `COMPOSE_PROFILES=production`, informe `DATABASE_URL` do s
 ## Infoconv e segredos
 
 O `.env.example` contém apenas o modelo; `.env` e certificados ficam fora do Git e do build. Mantenha `INFOCONV_ENABLED=false` até configurar suas credenciais. Ao habilitar, preencha as chaves independentes e coloque certificado/chave privada e cadeia em `certificates/infoconv.pem` e `certificates/infoconv-ca.pem` ou ajuste `INFOCONV_CERTIFICATES_DIR`. A pasta é montada somente para leitura. O pré-deploy valida os arquivos sem consultar o SERPRO. Veja [integração](infoconv.md).
+
+O certificado Infoconv também pode ser `.pfx`/`.p12`: configure caminho, formato e senha no `.env` conforme [certificados PFX](infoconv.md#certificado-pfx--pkcs12). O bundle de CAs, quando usado, continua PEM.

@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { loadInfoconvTlsOptions } from "../../certificate";
 import { Agent } from "node:https";
-import { X509Certificate } from "node:crypto";
 import { createClientAsync, HttpClient } from "soap";
 import type { SoapEnvironment } from "./env";
 import type { SoapTransport } from "./soap-transport";
@@ -57,24 +56,14 @@ export class InfoconvSoapClient implements SoapTransport {
     if (!this.options.enabled) throw new ConsultationError("unavailable");
     let agent: Agent | undefined;
     try {
-      const pem = await readFile(this.env.INFOCONV_CERTIFICATE_PATH);
-      const certificate = new X509Certificate(pem);
-      if (
-        Date.parse(certificate.validTo) <= Date.now() ||
-        Date.parse(certificate.validFrom) > Date.now()
-      )
-        throw new ConsultationError("unavailable");
-      const ca = this.env.INFOCONV_CA_PATH
-        ? await readFile(this.env.INFOCONV_CA_PATH)
-        : undefined;
-      agent = new Agent({
-        cert: pem,
-        key: pem,
-        ca,
-        passphrase: this.env.INFOCONV_CERTIFICATE_PASSPHRASE,
-        minVersion: "TLSv1.2",
-        rejectUnauthorized: true,
-      });
+      agent = new Agent(
+        await loadInfoconvTlsOptions({
+          certificatePath: this.env.INFOCONV_CERTIFICATE_PATH,
+          format: this.env.INFOCONV_CERTIFICATE_FORMAT,
+          passphrase: this.env.INFOCONV_CERTIFICATE_PASSPHRASE,
+          caPath: this.env.INFOCONV_CA_PATH,
+        }),
+      );
       const wsdl =
         kind === "cpf"
           ? this.env.INFOCONV_CPF_WSDL
