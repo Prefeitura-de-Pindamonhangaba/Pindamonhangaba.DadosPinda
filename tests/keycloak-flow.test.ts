@@ -3,7 +3,7 @@ import { generateKeyPairSync, sign, createHash } from "node:crypto";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { createAuthService } from "../src/modules/auth/services/auth-service";
 import { parseAuthEnvironment } from "../src/shared/lib/env";
 import { createUserRepository } from "../src/modules/users/models/user-repository";
@@ -106,7 +106,9 @@ identityTest(
     const [bound] = await db!
       .select({ userId: account.userId })
       .from(account)
-      .where(eq(account.providerId, "keycloak"));
+      .where(
+        and(eq(account.providerId, "keycloak"), eq(account.userId, targetId)),
+      );
     expect(bound.userId).toBe(targetId);
   },
 );
@@ -198,6 +200,24 @@ identityTest(
     const fetchMock = spyOn(globalThis, "fetch").mockImplementation(fakeFetch);
     try {
       const auth = createAuthService(db!, env!);
+      const localLogin = await auth.handler(
+        new Request(base + "/api/auth/sign-in/email", {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: base },
+          body: JSON.stringify({
+            email,
+            password: "Fictitious-test-password-123",
+          }),
+        }),
+      );
+      expect(localLogin.ok).toBe(false);
+      expect(
+        localLogin.headers
+          .getSetCookie()
+          .some(
+            (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
+          ),
+      ).toBe(false);
       let loginNumber = 0;
       const testSubnet = Math.floor(Math.random() * 255);
       async function login() {
@@ -257,7 +277,9 @@ identityTest(
       const [stored] = await db!
         .select()
         .from(account)
-        .where(eq(account.providerId, "keycloak"));
+        .where(
+          and(eq(account.providerId, "keycloak"), eq(account.userId, targetId)),
+        );
       expect(stored.accessToken).not.toBe("plain-test-access-token");
       expect(stored.refreshToken).not.toBe("plain-test-refresh-token");
       const count = exchanges;

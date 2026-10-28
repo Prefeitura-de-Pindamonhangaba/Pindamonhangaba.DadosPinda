@@ -15,3 +15,5 @@ Os testes Bun usam dados fictícios e mocks, sem consultas cadastrais reais. Os 
 Na CI, Playwright usa Chromium instalado pelo workflow e PostgreSQL efêmero com banco exclusivo. `PLAYWRIGHT_BROWSER_CHANNEL=chromium` seleciona esse navegador; sem a variável permanece o Edge local. O workflow não usa certificados ou dados reais.
 
 Os testes de certificados Infoconv geram identidades fictícias temporárias com `openssl` (disponível no PATH do ambiente de testes) e verificam mTLS em loopback. O binário é necessário somente para gerar as fixtures de teste; o carregamento de PFX/PEM na aplicação usa o TLS nativo do Bun, sem OpenSSL externo em produção e sem consultas ao SERPRO.
+
+Os testes de navegador iniciam um provedor OIDC fictício em `127.0.0.1:3102`, separado do app de teste (`localhost:3101`). Ele emite tokens RSA assinados com chave efêmera e verifica PKCE; as contas são vinculadas explicitamente no banco isolado. Nenhum endpoint de teste é incluído na aplicação. A suíte cobre o botão Login, ausência de formulário local, bloqueio de endpoints de senha, SSO, sessão, logout e revogação. O Keycloak real não é acessado.

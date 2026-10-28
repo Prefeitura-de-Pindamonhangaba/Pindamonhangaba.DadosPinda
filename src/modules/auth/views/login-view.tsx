@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { authClient } from "@/shared/lib/auth/client";
 import { useHydrated } from "@/shared/lib/auth/use-hydrated";
-import { loginSchema } from "@/modules/auth/schemas/login-schema";
 import {
   InstitutionalHeader,
   InstitutionalFooter,
@@ -17,47 +16,9 @@ export function LoginView({
 }) {
   const search = useSearchParams();
   const ssoError = search.get("sso") === "error" || search.has("error");
-  const router = useRouter();
   const hydrated = useHydrated();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const form = new FormData(event.currentTarget);
-    const parsed = loginSchema.safeParse({
-      email: form.get("email"),
-      password: form.get("password"),
-    });
-    if (!parsed.success) {
-      setError("Informe e-mail e senha válidos.");
-      return;
-    }
-    setPending(true);
-    try {
-      const result = await authClient.signIn.email({
-        ...parsed.data,
-        rememberMe: false,
-      });
-      if (result.error) {
-        setError(
-          result.error.status === 429
-            ? "Muitas tentativas. Aguarde um minuto e tente novamente."
-            : result.error.status >= 500
-              ? "Serviço indisponível. Tente novamente em instantes."
-              : "E-mail ou senha inválidos, ou acesso não autorizado.",
-        );
-        return;
-      }
-      router.replace("/");
-      router.refresh();
-    } catch {
-      setError("Serviço indisponível. Tente novamente em instantes.");
-    } finally {
-      setPending(false);
-    }
-  }
 
   async function signInWithKeycloak() {
     setPending(true);
@@ -80,76 +41,61 @@ export function LoginView({
   return (
     <>
       <InstitutionalHeader />
-      <main id="main" className="container login-layout" tabIndex={-1}>
-        <div className="login-introduction">
-          <span className="eyebrow">Acesso institucional</span>
-          <h1>
+      <main id="main" className="container welcome-layout" tabIndex={-1}>
+        <section className="welcome-hero" aria-labelledby="welcome-title">
+          <span className="eyebrow">Dados a serviço da cidade</span>
+          <h1 id="welcome-title">
             Pinda Dados<span aria-hidden="true">.</span>
           </h1>
           <p className="introduction">
             Informação integrada para a gestão municipal.
           </p>
-          <p>
-            Acesso exclusivo a servidores autorizados. Utilize sua conta
-            individual para entrar.
+          <p className="welcome-description">
+            Uma plataforma para consultar informações cadastrais de pessoas e
+            empresas, apoiar decisões e simplificar o trabalho dos servidores.
           </p>
-        </div>
-        <section className="login-panel" aria-labelledby="login-title">
-          <h2 id="login-title">Entrar no sistema</h2>
-          {keycloakEnabled && (
-            <>
-              <p>Utilize sua conta institucional da Prefeitura.</p>
-              <button
-                className="button"
-                type="button"
-                onClick={signInWithKeycloak}
-                disabled={pending || !hydrated}
-              >
-                Entrar com conta institucional
-              </button>
-            </>
-          )}
-          <p>Informe suas credenciais de acesso local.</p>
-          <form onSubmit={handleSubmit} aria-busy={pending}>
-            <label htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="username"
-              maxLength={254}
-              required
-              disabled={pending}
-            />
-            <label htmlFor="password">Senha</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              maxLength={128}
-              required
-              disabled={pending}
-            />
-            <p className="form-error" role="alert" aria-live="polite">
-              {error ||
-                (ssoError
-                  ? "Acesso institucional não autorizado ou indisponível. Entre em contato com o DSI."
-                  : "")}
-            </p>
+          <div className="welcome-access" aria-busy={pending}>
             <button
               className="button"
-              type="submit"
-              disabled={pending || !hydrated}
+              type="button"
+              onClick={signInWithKeycloak}
+              disabled={pending || !hydrated || !keycloakEnabled}
             >
-              {pending ? "Entrando…" : "Entrar"}
+              {pending ? "Redirecionando…" : "Login"}
             </button>
-          </form>
-          <p className="login-help">
-            Para solicitar acesso ou recuperar sua senha, entre em contato com o
-            DSI.
-          </p>
+            <p>Entre com sua conta institucional da Prefeitura.</p>
+          </div>
+          {(error || ssoError || !keycloakEnabled) && (
+            <p className="welcome-alert" role="alert">
+              {error ||
+                (!keycloakEnabled
+                  ? "O acesso institucional está indisponível. Entre em contato com o DSI."
+                  : "Acesso institucional não autorizado ou indisponível. Entre em contato com o DSI.")}
+            </p>
+          )}
         </section>
+        <aside className="welcome-details" aria-label="Sobre a plataforma">
+          <div>
+            <span className="eyebrow">01 · Integração</span>
+            <h2>Uma visão mais completa</h2>
+            <p>
+              Informações de fontes oficiais reunidas em um único ambiente de
+              consulta.
+            </p>
+          </div>
+          <div>
+            <span className="eyebrow">02 · Segurança</span>
+            <h2>Acesso responsável</h2>
+            <p>
+              Contas individuais, permissões por função e consultas registradas
+              para auditoria.
+            </p>
+          </div>
+          <p className="welcome-notice">
+            Uso exclusivo de servidores autorizados, para finalidades
+            administrativas. Para solicitar acesso, entre em contato com o DSI.
+          </p>
+        </aside>
       </main>
       <InstitutionalFooter />
     </>

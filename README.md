@@ -14,7 +14,7 @@ Plataforma desenvolvida pela Prefeitura Municipal de Pindamonhangaba, por meio d
 
 | Recurso                    | Comportamento                                                                                  |
 | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| Acesso individual          | Login, sessões protegidas, papéis e permissões verificadas no servidor                         |
+| Acesso individual          | Login exclusivo pelo Keycloak, sessões protegidas, papéis e permissões no servidor             |
 | Consultas cadastrais       | CPF/CNPJ individuais e lotes TXT, resultados organizados e descrições dos códigos              |
 | Integração Infoconv        | SOAP isolado em adapter; contrato interno preparado para uma futura implementação REST         |
 | Reutilização de resultados | Cache criptografado por até sete dias, consultado antes de novas chamadas à fonte              |
@@ -33,7 +33,7 @@ Requisito: **Docker com Compose**. Copie `.env.example` para `.env` e mantenha `
 docker compose up --build -d
 ```
 
-Abra http://localhost:3000 e use a conta definida no `.env`. O Compose inicia o banco, aplica migrações locais e cria a primeira conta administradora. Bancos existentes preservam contas e senhas. Não é necessário instalar Bun ou PostgreSQL na máquina. Consulte o [início rápido](docs/inicio-rapido.md).
+Abra http://localhost:3000. Configure o Keycloak no `.env` e vincule a conta inicial conforme [login institucional](docs/keycloak.md). A única forma de login é pelo Keycloak; enquanto estiver desabilitado, a apresentação permanece acessível e o botão Login fica indisponível. O Compose inicia o banco, aplica migrações locais e cria a primeira conta administradora. Bancos existentes preservam contas e senhas. Não é necessário instalar Bun ou PostgreSQL na máquina. Consulte o [início rápido](docs/inicio-rapido.md).
 
 Mantenha `INFOCONV_ENABLED=false` até configurar a integração. O `.env` e certificados são ignorados pelo Git e excluídos do build; nunca compartilhe esses arquivos.
 

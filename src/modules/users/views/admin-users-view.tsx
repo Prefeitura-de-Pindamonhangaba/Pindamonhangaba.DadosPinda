@@ -81,7 +81,6 @@ export function AdminUsersView({
       email: data.get("email"),
       role: data.get("role"),
       enabled: data.get("enabled") === "on",
-      password: data.get("password") || undefined,
     };
     try {
       const response = await fetch("/api/admin/users", {
@@ -113,7 +112,10 @@ export function AdminUsersView({
         <div>
           <span className="eyebrow">Administração</span>
           <h1>Servidores e acessos</h1>
-          <p>Contas individuais, papéis e revogação de sessões.</p>
+          <p>
+            Contas individuais, papéis e revogação de sessões. O login utiliza o
+            Keycloak institucional.
+          </p>
         </div>
       </div>
       <form
@@ -158,20 +160,6 @@ export function AdminUsersView({
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label htmlFor="user-password">
-                {editing ? "Nova senha (opcional)" : "Senha inicial"}
-              </label>
-              <input
-                id="user-password"
-                name="password"
-                type="password"
-                minLength={12}
-                maxLength={128}
-                autoComplete="new-password"
-                required={!editing}
-              />
             </div>
           </div>
           {editing && (
@@ -229,8 +217,8 @@ export function AdminUsersView({
         </button>
       </div>
       <p>
-        Contas importadas começam desativadas. Defina uma senha individual antes
-        de ativá-las.
+        Contas importadas começam desativadas. Vincule cada conta ao Keycloak
+        antes de ativá-la.
       </p>
       <label htmlFor="users-filter">Buscar servidor</label>
       <input
