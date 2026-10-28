@@ -8,6 +8,7 @@ As configurações ficam no `.env` privado de cada instalação; `.env.example` 
 
 ```env
 KEYCLOAK_ENABLED=false
+KEYCLOAK_ALLOW_INSECURE_HTTP=false
 KEYCLOAK_ISSUER=
 KEYCLOAK_CLIENT_ID=
 KEYCLOAK_CLIENT_SECRET=
@@ -16,6 +17,8 @@ KEYCLOAK_CLIENT_SECRET=
 Preencha `KEYCLOAK_ISSUER` com a URL HTTPS completa do realm, por exemplo `https://sso.seu-orgao.example/realms/prefeitura`, e informe ID e segredo do cliente confidencial. Habilite `KEYCLOAK_ENABLED=true` somente após configurar o cliente e preparar os usuários. A URL não deve conter credenciais, query string ou fragmento. TLS precisa ser confiável para o navegador e os containers.
 
 O Compose transmite as variáveis apenas ao backend. A tela recebe somente o indicador de disponibilidade do login institucional; o segredo nunca é enviado ao navegador. A configuração habilitada incompleta bloqueia a validação de ambiente e o pré-deploy com os nomes dos campos pendentes, sem exibir valores. Desabilitada, não exige conexão ou credenciais Keycloak.
+
+Para um teste temporário com IdP HTTP, habilite explicitamente `KEYCLOAK_ALLOW_INSECURE_HTTP=true`. A exceção exige `COMPOSE_PROFILES=development` e `APP_URL` HTTP em `localhost`, `127.0.0.1` ou `::1`. Sem Compose, exige `NODE_ENV=development` e a mesma origem local. Em produção HTTP continua recusado mesmo com a flag habilitada. Nesse teste o segredo do cliente e os tokens trafegam sem TLS até o IdP; use somente o ambiente de desenvolvimento autorizado e remova a exceção ao configurar HTTPS.
 
 ## Cliente no Keycloak
 
@@ -28,7 +31,7 @@ No realm escolhido, configure um cliente OpenID Connect confidencial:
 - Web origin de produção: `https://dados.pindamonhangaba.sp.gov.br`.
 - Scopes: `openid`, `profile` e `email`, com `email_verified=true` para os usuários autorizados.
 
-Use origens e redirects exatos, sem curingas. Para desenvolvimento crie cliente separado, com callback `http://localhost:3000/api/auth/callback/keycloak` e origin `http://localhost:3000`; ajuste a porta conforme `APP_URL`. O issuer Keycloak permanece HTTPS. O endpoint discovery é derivado do issuer conforme a documentação oficial; não há endpoints administrativos ou credenciais fixados no código.
+Use origens e redirects exatos, sem curingas. Para desenvolvimento crie cliente separado, com callback `http://localhost:3000/api/auth/callback/keycloak` e origin `http://localhost:3000`; ajuste a porta conforme `APP_URL`. O issuer Keycloak permanece HTTPS, salvo a exceção temporária explícita de desenvolvimento descrita acima. O endpoint discovery é derivado do issuer conforme a documentação oficial; não há endpoints administrativos ou credenciais fixados no código.
 
 ## Provisionamento e autorização
 

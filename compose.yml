@@ -1,6 +1,7 @@
 # COMPOSE_PROFILES no .env: development (banco local) ou production (banco externo).
 x-deployment: &deployment
   COMPOSE_PROFILES: ${COMPOSE_PROFILES:-development}
+  KEYCLOAK_ALLOW_INSECURE_HTTP: ${KEYCLOAK_ALLOW_INSECURE_HTTP:-false}
   KEYCLOAK_ENABLED: ${KEYCLOAK_ENABLED:-false}
   KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-}
   KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
