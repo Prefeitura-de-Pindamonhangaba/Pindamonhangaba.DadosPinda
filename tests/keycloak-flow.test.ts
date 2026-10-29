@@ -164,8 +164,16 @@ identityTest(
             sub: ["unlinked", "new_user"].includes(mode)
               ? "other-subject"
               : "stable-subject",
-            email: mode === "new_user" ? "unprovisioned@example.test" : email,
-            email_verified: mode !== "unverified",
+            email:
+              mode === "no_email"
+                ? undefined
+                : mode === "different_email"
+                  ? "different@example.test"
+                  : mode === "new_user"
+                    ? "unprovisioned@example.test"
+                    : email,
+            email_verified:
+              mode === "no_email" ? undefined : mode !== "unverified",
             name: "Nome remoto",
             nonce: mode === "nonce" ? "forged" : nonce,
             iat: now,
@@ -190,7 +198,13 @@ identityTest(
             refresh_token: "plain-test-refresh-token",
             token_type: "Bearer",
             expires_in: 300,
-            id_token: token,
+            id_token:
+              mode === "no_id_token"
+                ? undefined
+                : mode === "invalid_signature"
+                  ? token.slice(0, token.lastIndexOf(".") + 1) +
+                    "invalid-signature"
+                  : token,
           });
         }
         throw new Error("Rede externa inesperada no teste OIDC.");
@@ -243,6 +257,9 @@ identityTest(
         challenge = redirect.searchParams.get("code_challenge")!;
         expect(redirect.searchParams.get("code_challenge_method")).toBe("S256");
         expect(nonce).toBeTruthy();
+        expect(redirect.searchParams.get("scope")?.split(" ")).not.toContain(
+          "email",
+        );
         const cookie = start.headers
           .getSetCookie()
           .map((c) => c.split(";")[0])
@@ -289,14 +306,32 @@ identityTest(
         }),
       );
       expect(exchanges).toBe(count);
+      for (const value of ["unverified", "no_email", "different_email"]) {
+        mode = value;
+        const allowed = await login();
+        const cookies = allowed.response.headers
+          .getSetCookie()
+          .filter(
+            (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
+          );
+        expect(cookies.length).toBeGreaterThan(0);
+        const session = await auth.api.getSession({
+          headers: new Headers({
+            cookie: cookies.map((c) => c.split(";")[0]).join("; "),
+          }),
+        });
+        expect(session?.user.id).toBe(targetId);
+        expect(session?.user.email).toBe(email);
+      }
       for (const value of [
         "unlinked",
         "new_user",
-        "unverified",
         "issuer",
         "audience",
         "nonce",
         "expired",
+        "invalid_signature",
+        "no_id_token",
       ]) {
         mode = value;
         const denied = await login();

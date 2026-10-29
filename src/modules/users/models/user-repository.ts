@@ -6,6 +6,24 @@ import type { Role } from "@/modules/auth/permissions";
 
 export function createUserRepository(database: PostgresJsDatabase) {
   return {
+    async findKeycloakProfile(accountId: string) {
+      const [profile] = await database
+        .select({
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+        })
+        .from(account)
+        .innerJoin(user, eq(account.userId, user.id))
+        .where(
+          and(
+            eq(account.providerId, "keycloak"),
+            eq(account.accountId, accountId),
+            eq(user.enabled, true),
+          ),
+        );
+      return profile;
+    },
     async changeAccess(input: {
       email: string;
       action: "disable" | "reset-password";

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { genericOAuth, keycloak } from "better-auth/plugins/generic-oauth";
 import { keycloakAccountId } from "./keycloak-config";
 import { betterAuth } from "better-auth";
@@ -40,12 +41,39 @@ export function createAuthService(
                   clientId: env.keycloak.clientId,
                   clientSecret: env.keycloak.clientSecret,
                   pkce: true,
+                  scopes: ["openid", "profile"],
                   disableSignUp: true,
                   disableImplicitSignUp: true,
                   overrideUserInfo: false,
                   disableProviderLogout: true,
                 }),
                 requireIdTokenVerification: true,
+                requireEmailVerification: false,
+                getUserInfo: async (tokens) => {
+                  if (!tokens.idToken || !env.keycloak.enabled) return null;
+                  // O SDK valida assinatura, issuer, audience e nonce antes desta callback.
+                  const profile = z
+                    .object({
+                      iss: z.literal(env.keycloak.issuer),
+                      sub: z.string(),
+                    })
+                    .passthrough()
+                    .safeParse(
+                      JSON.parse(
+                        Buffer.from(
+                          tokens.idToken.split(".")[1],
+                          "base64url",
+                        ).toString("utf8"),
+                      ),
+                    );
+                  if (!profile.success) return null;
+                  const local = await users.findKeycloakProfile(
+                    keycloakAccountId(env.keycloak.issuer, profile.data.sub),
+                  );
+                  if (!local) return null;
+                  // Campos de compatibilidade do SDK vêm da conta já vinculada, nunca do e-mail do IdP.
+                  return { ...profile.data, id: profile.data.sub, ...local };
+                },
                 accountSubject: ({ profile }) =>
                   keycloakAccountId(
                     env.keycloak.enabled ? env.keycloak.issuer : "",
@@ -71,11 +99,7 @@ export function createAuthService(
       validateUserInfo: ({ source }) => {
         if (source.oauth?.providerId !== "keycloak") return;
         const profile = source.oauth.profile;
-        if (
-          !env.keycloak.enabled ||
-          profile?.iss !== env.keycloak.issuer ||
-          profile?.email_verified !== true
-        )
+        if (!env.keycloak.enabled || profile?.iss !== env.keycloak.issuer)
           return {
             error: "access_denied",
             errorDescription: "Acesso institucional não autorizado.",

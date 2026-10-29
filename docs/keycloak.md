@@ -29,7 +29,7 @@ No realm escolhido, configure um cliente OpenID Connect confidencial:
 - Implicit flow, Direct access grants e Service accounts: desabilitados para esse cliente.
 - Valid redirect URI de produção: `https://dados.pindamonhangaba.sp.gov.br/api/auth/callback/keycloak`.
 - Web origin de produção: `https://dados.pindamonhangaba.sp.gov.br`.
-- Scopes: `openid`, `profile` e `email`, com `email_verified=true` para os usuários autorizados.
+- Scopes solicitados pelo Pinda Dados: `openid` e `profile`. O login não exige `email` nem `email_verified`; a identidade é o vínculo explícito entre issuer e `sub`.
 
 Use origens e redirects exatos, sem curingas. Para desenvolvimento crie cliente separado, com callback `http://localhost:3000/api/auth/callback/keycloak` e origin `http://localhost:3000`; ajuste a porta conforme `APP_URL`. O issuer Keycloak permanece HTTPS, salvo a exceção temporária explícita de desenvolvimento descrita acima. O endpoint discovery é derivado do issuer conforme a documentação oficial; não há endpoints administrativos ou credenciais fixados no código.
 
@@ -67,7 +67,7 @@ O callback carrega authorization code e state na URL. O modelo Nginx desabilita 
 
 ## Sessões, saída e limites desta etapa
 
-A assinatura do ID token é verificada pelo SDK usando JWKS do discovery; são verificados audience, issuer e nonce. A aplicação ainda confere o issuer configurado e e-mail verificado. Tokens OAuth persistidos são criptografados pelo Better Auth com `BETTER_AUTH_SECRET`; mantenha esse segredo protegido e estável. State e PKCE são gerenciados pelo SDK, sem implementação criptográfica própria.
+A assinatura do ID token é verificada pelo SDK usando JWKS do discovery; são verificados audience, issuer e nonce. A aplicação ainda confere o issuer configurado e o vínculo com a conta local ativa. Dados de e-mail do Keycloak são ignorados para autenticação; campos exigidos internamente pelo SDK usam o cadastro local já vinculado, sem associação por e-mail. Tokens OAuth persistidos são criptografados pelo Better Auth com `BETTER_AUTH_SECRET`; mantenha esse segredo protegido e estável. State e PKCE são gerenciados pelo SDK, sem implementação criptográfica própria.
 
 O Keycloak é a única forma de login. A página pública apresenta a plataforma e um único botão “Login”, que inicia o fluxo institucional. Login por e-mail/senha, cadastro público e troca ou recuperação de senha local não são expostos. A configuração `emailAndPassword` do SDK também permanece desabilitada, além do bloqueio dos endpoints no controller.
 
@@ -85,8 +85,10 @@ Desabilitar uma conta apenas no Keycloak impede novos logins conforme a polític
 bun test --timeout 30000 tests/keycloak-flow.test.ts
 ```
 
-O teste utiliza um provider fictício com tokens RSA assinados e JWKS localmente simulados, sem conexão a Keycloak real. Verifica PKCE, vínculo explícito, permissões preservadas, tokens criptografados, replay, nonce, issuer, audience, expiração, e-mail não verificado e usuários não autorizados/desativados. A CI executa esse teste no mesmo PostgreSQL efêmero reservado ao job de navegador, antes do Playwright.
+O teste utiliza um provider fictício com tokens RSA assinados e JWKS localmente simulados, sem conexão a Keycloak real. Verifica PKCE, vínculo explícito, permissões preservadas, tokens criptografados, replay, nonce, issuer, audience, expiração, acesso com e-mail não verificado, ausente ou diferente e bloqueio de usuários não autorizados/desativados. A CI executa esse teste no mesmo PostgreSQL efêmero reservado ao job de navegador, antes do Playwright.
 
 A homologação com o realm real ainda deve confirmar login, conta sem vínculo, conta desativada, recuperação pelo Keycloak, logout e URLs de retorno. Nenhuma instância ou cliente Keycloak é criado automaticamente pela aplicação.
 
 Referências: [Better Auth Generic OAuth](https://better-auth.com/docs/plugins/generic-oauth) e [Keycloak OpenID Connect](https://www.keycloak.org/securing-apps/oidc-layers).
+
+O Pinda Dados não envia nem solicita confirmação de e-mail. Se a própria tela do Keycloak continuar exigindo essa ação, revise no Keycloak a configuração do realm e as ações obrigatórias do usuário (`Verify Email`); essa política do provedor não é alterada pela aplicação.
