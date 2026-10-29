@@ -13,3 +13,14 @@ test-results
 playwright-report
 
 certificates/
+
+.github/
+e2e/
+tests/
+*.log
+*.tsbuildinfo
+README.md
+CONTRIBUTING.md
+SECURITY.md
+AGENTS.md
+docs/*.md
