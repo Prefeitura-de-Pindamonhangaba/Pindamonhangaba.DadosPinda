@@ -49,13 +49,4 @@ systemctl enable --now dadospinda-rede-interna.service
 
 O `.env` usa o cliente confidencial `PindaDados` no realm `pindamonhangaba`, com issuer `https://10.0.0.16:8081/realms/pindamonhangaba`. O callback exato e `https://10.0.0.16:3001/api/auth/callback/keycloak`, e a origem autorizada e `https://10.0.0.16:3001`. O cliente usa Authorization Code com PKCE S256; implicit flow, direct access grants e service accounts estao desabilitados.
 
-As identidades foram vinculadas explicitamente pelas ferramentas administrativas, com registro de auditoria:
-
-- `admin.dadospinda`: vinculado a conta local `admin.dadospinda@example.invalid`, papel `admin` da aplicacao; sem privilegios administrativos no Keycloak.
-- `usuario.teste`: vinculado a conta local `usuario.teste@example.invalid`, papel `viewer`, sem acesso administrativo.
-
-Os e-mails sob `example.invalid` identificam contas locais de homologacao, nao caixas postais. Foram marcados como verificados no Keycloak por provisionamento administrativo para essa homologacao; substituir por enderecos reais e executar verificacao de e-mail ao cadastrar servidores reais.
-
-O login local por e-mail e senha permanece disponivel. Na tela do Keycloak, usar os nomes de usuario indicados acima. A administracao global do Keycloak continua com a conta separada `admin.prefeitura` no realm `master`.
-
-Foi validado o fluxo real completo de ambas as contas: inicio pelo DadosPinda, login no Keycloak, callback, emissao de sessao local, permissao administrativa permitida para admin e negada para viewer e logout. O cliente anterior no realm master foi preservado, e seu segredo nao e mais usado pelo DadosPinda.
+A gestão de acessos passou a ser centralizada no Keycloak: configure os client roles e o mapper no ID token conforme [Keycloak](keycloak.md). Vínculos históricos são preservados, mas não são necessários novos comandos de vinculação. Nomes de usuário não concedem privilégios; os papéis do cliente determinam o acesso. A homologação dessa gestão deve ser repetida na instalação real após a atualização.

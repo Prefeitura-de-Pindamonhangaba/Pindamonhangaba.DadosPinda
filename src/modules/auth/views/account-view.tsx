@@ -18,8 +18,8 @@ export function AccountView() {
           institucional. Em caso de dificuldade, entre em contato com o DSI.
         </p>
         <p>
-          As permissões de consulta são definidas pela administração do Pinda
-          Dados.
+          Seu nome e suas permissões são sincronizados do Keycloak
+          institucional.
         </p>
       </section>
     </>

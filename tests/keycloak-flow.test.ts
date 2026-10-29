@@ -1,3 +1,6 @@
+import { parseKeycloakIdentity } from "../src/modules/auth/services/keycloak-identity";
+import { createKeycloakSessionService } from "../src/modules/auth/services/keycloak-session-service";
+import { createKeycloakIdentityRepository } from "../src/modules/auth/models/keycloak-identity-repository";
 import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { generateKeyPairSync, sign, createHash } from "node:crypto";
 import postgres from "postgres";
@@ -6,10 +9,6 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { and, eq, inArray } from "drizzle-orm";
 import { createAuthService } from "../src/modules/auth/services/auth-service";
 import { parseAuthEnvironment } from "../src/shared/lib/env";
-import { createUserRepository } from "../src/modules/users/models/user-repository";
-import { provisionUser } from "../src/modules/users/services/provision-user-service";
-import { manageKeycloakBinding } from "../src/modules/users/services/keycloak-binding-service";
-import { createKeycloakBindingRepository } from "../src/modules/users/models/keycloak-binding-repository";
 import { account, user } from "../src/modules/auth/models/auth-schema";
 import { auditEvent } from "../src/modules/audit/models/audit-schema";
 
@@ -30,7 +29,8 @@ const db = client ? drizzle(client) : undefined;
 const issuer = "https://keycloak.example.test/realms/pinda";
 const base = "https://pinda.example.test";
 const ids: string[] = [];
-let adminId: string, targetId: string;
+let targetId: string;
+const subject = `subject-${crypto.randomUUID()}`;
 const email = `oidc-${crypto.randomUUID()}@example.org`;
 const env = databaseUrl
   ? parseAuthEnvironment({
@@ -48,30 +48,16 @@ const env = databaseUrl
 beforeAll(async () => {
   if (!db) return;
   await migrate(db, { migrationsFolder: "drizzle" });
-  const repository = createUserRepository(db);
-  for (const [name, role, address] of [
-    ["Admin fictício", "admin", `admin-${email}`],
-    ["Operador fictício", "operator", email],
-  ] as const) {
-    const created = await provisionUser(repository, {
-      name,
-      email: address,
-      password: "Fictitious-test-password-123",
-      role,
-    });
-    ids.push(created.id);
-  }
-  [adminId, targetId] = ids;
-  await manageKeycloakBinding(
-    createKeycloakBindingRepository(db),
-    {
-      action: "link",
-      actorId: adminId,
-      userId: targetId,
-      subject: "stable-subject",
-    },
-    env!.keycloak,
-  );
+  const [legacy] = await db
+    .insert(user)
+    .values({
+      name: "Administrador legado sem vínculo",
+      email,
+      role: "admin",
+      enabled: true,
+    })
+    .returning();
+  ids.push(legacy.id);
 });
 afterAll(async () => {
   if (!db || !client) return;
@@ -81,40 +67,7 @@ afterAll(async () => {
 });
 
 identityTest(
-  "vínculos exigem administrador e impedem reatribuir identidade de outra conta",
-  async () => {
-    const repository = createKeycloakBindingRepository(db!);
-    await expect(
-      manageKeycloakBinding(
-        repository,
-        { action: "unlink", actorId: targetId, userId: adminId },
-        env!.keycloak,
-      ),
-    ).rejects.toThrow("Administrador");
-    await expect(
-      manageKeycloakBinding(
-        repository,
-        {
-          action: "link",
-          actorId: adminId,
-          userId: adminId,
-          subject: "stable-subject",
-        },
-        env!.keycloak,
-      ),
-    ).rejects.toThrow();
-    const [bound] = await db!
-      .select({ userId: account.userId })
-      .from(account)
-      .where(
-        and(eq(account.providerId, "keycloak"), eq(account.userId, targetId)),
-      );
-    expect(bound.userId).toBe(targetId);
-  },
-);
-
-identityTest(
-  "OIDC assinado: PKCE, sessão, identidade explícita, criptografia, replay e claims inválidas",
+  "Keycloak controla provisionamento, papéis e revogação; SDK valida OIDC sem exigir e-mail",
   async () => {
     const { publicKey, privateKey } = generateKeyPairSync("rsa", {
       modulusLength: 2048,
@@ -149,11 +102,17 @@ identityTest(
         if (url === issuer + "/token") {
           exchanges++;
           const body = new URLSearchParams(String(init?.body));
-          expect(
-            createHash("sha256")
-              .update(body.get("code_verifier")!)
-              .digest("base64url"),
-          ).toBe(challenge);
+          if (body.get("grant_type") === "refresh_token") {
+            expect(body.get("refresh_token")).toBe("plain-test-refresh-token");
+            if (mode === "revoked")
+              return Response.json({ error: "invalid_grant" }, { status: 400 });
+          } else {
+            expect(
+              createHash("sha256")
+                .update(body.get("code_verifier")!)
+                .digest("base64url"),
+            ).toBe(challenge);
+          }
           const now = Math.floor(Date.now() / 1000);
           const claims = {
             iss:
@@ -161,9 +120,9 @@ identityTest(
                 ? "https://other.example.test/realms/pinda"
                 : issuer,
             aud: mode === "audience" ? "other-client" : "pinda",
-            sub: ["unlinked", "new_user"].includes(mode)
-              ? "other-subject"
-              : "stable-subject",
+            sub: ["new_user", "changed_subject"].includes(mode)
+              ? subject + "-new"
+              : subject,
             email:
               mode === "no_email"
                 ? undefined
@@ -180,6 +139,23 @@ identityTest(
             exp: mode === "expired" ? now - 100 : now + 300,
             role: "admin",
             realm_access: { roles: ["admin"] },
+            resource_access:
+              mode === "other_client"
+                ? { other: { roles: ["admin"] } }
+                : {
+                    pinda: {
+                      roles:
+                        mode === "no_roles"
+                          ? []
+                          : [
+                              mode === "admin"
+                                ? "admin"
+                                : mode === "viewer"
+                                  ? "viewer"
+                                  : "operator",
+                            ],
+                    },
+                  },
           };
           const data =
             Buffer.from(
@@ -289,7 +265,11 @@ identityTest(
           cookie: sessionCookie.map((c) => c.split(";")[0]).join("; "),
         }),
       });
-      expect(principal?.user.id).toBe(targetId);
+      expect(principal?.user.id).toBeTruthy();
+      expect(principal?.user.id).not.toBe(ids[0]);
+      targetId = principal!.user.id;
+      ids.push(targetId);
+      expect(principal?.user.email).toEndWith("@identity.invalid");
       expect(principal?.user.role).toBe("operator");
       const [stored] = await db!
         .select()
@@ -321,11 +301,11 @@ identityTest(
           }),
         });
         expect(session?.user.id).toBe(targetId);
-        expect(session?.user.email).toBe(email);
+        expect(session?.user.email).toBe(principal?.user.email);
       }
       for (const value of [
-        "unlinked",
-        "new_user",
+        "no_roles",
+        "other_client",
         "issuer",
         "audience",
         "nonce",
@@ -343,19 +323,115 @@ identityTest(
             ),
         ).toBe(false);
       }
-      mode = "valid";
+      const identity = parseKeycloakIdentity(
+        {
+          iss: issuer,
+          sub: subject + "-concurrent",
+          resource_access: { pinda: { roles: ["viewer"] } },
+        },
+        issuer,
+        "pinda",
+      )!;
+      const repository = createKeycloakIdentityRepository(db!);
+      const parallelProfiles = await Promise.all([
+        repository.synchronize(identity),
+        repository.synchronize(identity),
+      ]);
+      expect(parallelProfiles[0].id).toBe(parallelProfiles[1].id);
+      ids.push(parallelProfiles[0].id);
+      mode = "new_user";
+      const newcomer = await login();
+      const newCookies = newcomer.response.headers
+        .getSetCookie()
+        .filter(
+          (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
+        );
+      const newSession = await auth.api.getSession({
+        headers: new Headers({
+          cookie: newCookies.map((c) => c.split(";")[0]).join("; "),
+        }),
+      });
+      expect(newSession?.user.id).toBeTruthy();
+      expect(newSession?.user.id).not.toBe(targetId);
+      ids.push(newSession!.user.id);
+      let checkedAt = Date.now();
+      const authority = createKeycloakSessionService(
+        auth,
+        createKeycloakIdentityRepository(db!),
+        () => checkedAt,
+      );
+      const originalHeaders = new Headers({
+        cookie: sessionCookie.map((c) => c.split(";")[0]).join("; "),
+      });
+      mode = "admin";
+      const previousExchanges = exchanges;
+      const concurrentChecks = await Promise.all([
+        authority.getPrincipal(originalHeaders),
+        authority.getPrincipal(originalHeaders),
+      ]);
+      expect(concurrentChecks.map((p) => p?.role)).toEqual(["admin", "admin"]);
+      expect(exchanges).toBe(previousExchanges + 1);
+      checkedAt += 60_001;
+      mode = "viewer";
+      expect((await authority.getPrincipal(originalHeaders))?.role).toBe(
+        "viewer",
+      );
       await db!
         .update(user)
-        .set({ enabled: false })
+        .set({ role: "admin" })
         .where(eq(user.id, targetId));
-      const disabled = await login();
-      expect(
-        disabled.response.headers
+      expect((await authority.getPrincipal(originalHeaders))?.role).toBe(
+        "viewer",
+      );
+      mode = "admin";
+      const changedLogin = await login();
+      const changedHeaders = new Headers({
+        cookie: changedLogin.response.headers
           .getSetCookie()
-          .some(
+          .filter(
             (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
-          ),
-      ).toBe(false);
+          )
+          .map((c) => c.split(";")[0])
+          .join("; "),
+      });
+      expect((await authority.getPrincipal(changedHeaders))?.role).toBe(
+        "admin",
+      );
+      expect((await authority.getPrincipal(originalHeaders))?.role).toBe(
+        "viewer",
+      );
+      checkedAt += 60_001;
+      mode = "no_roles";
+      expect(await authority.getPrincipal(originalHeaders)).toBeNull();
+      mode = "valid";
+      const renewed = await login();
+      const renewedHeaders = new Headers({
+        cookie: renewed.response.headers
+          .getSetCookie()
+          .filter(
+            (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
+          )
+          .map((c) => c.split(";")[0])
+          .join("; "),
+      });
+      checkedAt += 60_001;
+      mode = "changed_subject";
+      expect(await authority.getPrincipal(renewedHeaders)).toBeNull();
+      mode = "valid";
+      const last = await login();
+      const lastHeaders = new Headers({
+        cookie: last.response.headers
+          .getSetCookie()
+          .filter(
+            (c) => c.includes("session_token=") && !c.includes("Max-Age=0"),
+          )
+          .map((c) => c.split(";")[0])
+          .join("; "),
+      });
+      checkedAt += 60_001;
+      mode = "revoked";
+      expect(await authority.getPrincipal(lastHeaders)).toBeNull();
+      expect(await auth.api.getSession({ headers: lastHeaders })).toBeNull();
     } finally {
       fetchMock.mockRestore();
     }

@@ -1,94 +1,75 @@
-# Login institucional com Keycloak
+# Keycloak: gestão central de usuários e acessos
 
-A integração usa OpenID Connect (Authorization Code + PKCE S256) pelo provider Keycloak do Better Auth já instalado. Não adiciona biblioteca de autenticação nem altera o schema do banco. As contas continuam com UUID interno, RBAC e auditoria locais.
+O Keycloak controla usuários, nome, senha, recuperação, MFA, bloqueio, sessões e papéis. O Pinda Dados usa Better Auth como biblioteca OIDC e mantém UUID interno, sessões e auditoria. Não é necessário cadastro nem vínculo manual na aplicação.
 
-## Configuração exclusivamente no .env
-
-As configurações ficam no `.env` privado de cada instalação; `.env.example` contém somente o modelo. Nunca use `NEXT_PUBLIC_` para essas variáveis:
+## Configuração no .env
 
 ```env
-KEYCLOAK_ENABLED=false
-KEYCLOAK_ALLOW_INSECURE_HTTP=false
-KEYCLOAK_ISSUER=
-KEYCLOAK_CLIENT_ID=
+KEYCLOAK_ENABLED=true
+KEYCLOAK_ISSUER=https://sso.seu-orgao.example/realms/prefeitura
+KEYCLOAK_CLIENT_ID=pinda-dados
 KEYCLOAK_CLIENT_SECRET=
+KEYCLOAK_ALLOW_INSECURE_HTTP=false
 ```
 
-Preencha `KEYCLOAK_ISSUER` com a URL HTTPS completa do realm, por exemplo `https://sso.seu-orgao.example/realms/prefeitura`, e informe ID e segredo do cliente confidencial. Habilite `KEYCLOAK_ENABLED=true` somente após configurar o cliente e preparar os usuários. A URL não deve conter credenciais, query string ou fragmento. TLS precisa ser confiável para o navegador e os containers.
+O segredo fica exclusivamente no backend. `APP_URL` deve corresponder à origem pública exata, com HTTPS em produção. Com Keycloak desabilitado, somente a apresentação fica disponível; não há login alternativo.
 
-O Compose transmite as variáveis apenas ao backend. A tela recebe somente o indicador de disponibilidade do login institucional; o segredo nunca é enviado ao navegador. A configuração habilitada incompleta bloqueia a validação de ambiente e o pré-deploy com os nomes dos campos pendentes, sem exibir valores. Desabilitada, não exige conexão ou credenciais Keycloak.
+## Configurar uma vez no Keycloak
 
-Para um teste temporário com IdP HTTP, habilite explicitamente `KEYCLOAK_ALLOW_INSECURE_HTTP=true`. A exceção exige `COMPOSE_PROFILES=development` e `APP_URL` HTTP em `localhost`, `127.0.0.1` ou `::1`. Sem Compose, exige `NODE_ENV=development` e a mesma origem local. Em produção HTTP continua recusado mesmo com a flag habilitada. Nesse teste o segredo do cliente e os tokens trafegam sem TLS até o IdP; use somente o ambiente de desenvolvimento autorizado e remova a exceção ao configurar HTTPS.
+1. Use um cliente OpenID Connect confidencial, com **Client authentication** e **Standard flow** habilitados, PKCE S256 e renovação por refresh token habilitada (padrão do cliente). Desabilite Implicit flow, Direct access grants e Service accounts para esse cliente.
+2. Configure o callback exato `APP_URL/api/auth/callback/keycloak` e a Web origin igual a `APP_URL`, sem curingas. Exemplo de produção: `https://dados.pindamonhangaba.sp.gov.br/api/auth/callback/keycloak`. Para testes locais, ajuste host e porta conforme a instalação.
+3. Em **Clients → seu cliente → Roles**, crie os client roles `viewer`, `operator` e `admin`.
+4. Configure um mapper de **User Client Role**, no client scope dedicado do cliente (ou no scope `roles` atribuído como padrão). Selecione o cliente do Pinda Dados; use claim **`resource_access.${client_id}.roles`**, multivalorado, tipo String, com **Add to ID token** habilitado. O resultado no ID token deve conter o ID exato definido em `KEYCLOAK_CLIENT_ID`:
 
-## Cliente no Keycloak
+```json
+{
+  "resource_access": {
+    "pinda-dados": { "roles": ["operator"] }
+  }
+}
+```
 
-No realm escolhido, configure um cliente OpenID Connect confidencial:
+Troque `pinda-dados` pelo seu client ID. O scope padrão `roles` normalmente envia papéis no access token; esta integração precisa recebê-los também no **ID token**, validado pelo SDK. Não use tokens reais em sites públicos para inspecioná-los.
 
-- Client authentication: habilitada.
-- Standard flow: habilitado; PKCE S256.
-- Implicit flow, Direct access grants e Service accounts: desabilitados para esse cliente.
-- Valid redirect URI de produção: `https://dados.pindamonhangaba.sp.gov.br/api/auth/callback/keycloak`.
-- Web origin de produção: `https://dados.pindamonhangaba.sp.gov.br`.
-- Scopes solicitados pelo Pinda Dados: `openid` e `profile`. O login não exige `email` nem `email_verified`; a identidade é o vínculo explícito entre issuer e `sub`.
+5. Em **Users → usuário → Role mapping**, atribua um desses papéis do cliente. Você também pode usar grupos e papéis compostos do Keycloak para organizar a atribuição.
+6. Para o primeiro administrador, atribua `admin` no cliente e faça login. A conta local será criada automaticamente; não existe comando de vínculo nem senha inicial local.
 
-Use origens e redirects exatos, sem curingas. Para desenvolvimento crie cliente separado, com callback `http://localhost:3000/api/auth/callback/keycloak` e origin `http://localhost:3000`; ajuste a porta conforme `APP_URL`. O issuer Keycloak permanece HTTPS, salvo a exceção temporária explícita de desenvolvimento descrita acima. O endpoint discovery é derivado do issuer conforme a documentação oficial; não há endpoints administrativos ou credenciais fixados no código.
+| Client role | Acesso                                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------------------------- |
+| `viewer`    | Painel e conta                                                                                                 |
+| `operator`  | Consultas CPF/CNPJ, lotes, exportação e histórico autorizado                                                   |
+| `admin`     | Operação, auditoria global, atualização no SERPRO, franquia e domínios; visualização dos acessos sincronizados |
+
+Se houver mais de um papel reconhecido, prevalece `admin`, depois `operator`, depois `viewer`. Ausência de papel reconhecido nega acesso. Papéis do realm ou de outros clientes não concedem permissão, mesmo se chamados `admin`. Restrinja quem pode atribuir esses papéis no Keycloak.
 
 ## Provisionamento e autorização
 
-Não há cadastro automático, associação por e-mail nem importação automática de papéis do realm. Antes do primeiro login institucional:
+O SDK verifica assinatura, issuer, audience, nonce, state e PKCE. A aplicação usa exclusivamente issuer e `sub` imutável para identificar a pessoa. Após validar o papel, cria o registro local de forma idempotente, inclusive com logins concorrentes, e registra auditoria. Nome e papel são sincronizados a partir do token validado.
 
-1. Provisione a conta no Pinda Dados, atribua o menor papel necessário e deixe-a ativa, conforme [autenticação](autenticacao.md).
-2. Obtenha o UUID interno da conta e de um administrador ativo (retornados pelo provisionamento ou pela API administrativa).
-3. Obtenha o `sub` imutável que o cliente OIDC recebe do Keycloak. No padrão do Keycloak corresponde ao identificador do usuário; confirme eventuais mappers/pairwise subjects.
-4. Execute a vinculação administrativa por entrada padrão. Exemplo PowerShell:
+Nenhuma claim de e-mail é exigida ou usada para associação. O SDK exige um campo técnico de e-mail no banco; para contas novas ele é gerado a partir do hash da identidade, no domínio reservado `identity.invalid`, sem uso para mensagens ou autenticação.
 
-```powershell
-@{
-  action = 'link'
-  actorId = 'UUID_DO_ADMINISTRADOR_LOCAL'
-  userId = 'UUID_DO_USUARIO_LOCAL'
-  subject = 'SUB_DO_USUARIO_KEYCLOAK'
-} | ConvertTo-Json -Compress | bun run users:keycloak
-```
+Contas previamente vinculadas preservam o UUID e os vínculos de auditoria. Contas locais antigas sem identidade Keycloak não são associadas por coincidência de e-mail. O primeiro login dessa pessoa cria outro registro seguro, ligado ao seu issuer/sub. Não apague registros históricos para ajustar acessos.
 
-Em produção com ferramentas Docker, envie o mesmo JSON a `docker compose run --rm -T tools users:keycloak` (acrescente os arquivos/variáveis de imagem da release quando usar GHCR, conforme [GitHub Actions](github-actions.md)).
+`/admin/users` mostra apenas o espelho das contas Keycloak; POST/PATCH de administração local são recusados. Os comandos legados `users:create`, `users:manage` e `users:keycloak` deixam de alterar usuários. `INITIAL_ADMIN_*` não é mais necessário e é ignorado pelo Compose.
 
-A chave de vínculo inclui `issuer` e `sub`, portanto identidades de realms diferentes não se confundem. Um usuário tem apenas um vínculo Keycloak; uma identidade não pode pertencer a duas contas locais. Para trocar realm ou identidade, remova o vínculo anterior e vincule novamente, com revisão administrativa. Não edite a tabela de contas manualmente.
+## Mudanças, bloqueio e sessões
 
-Para remover:
+A cada até 60 segundos de uso por instância da aplicação, o backend renova o token no Keycloak e valida o ID token retornado pelo SDK. Papéis removidos ou alterados passam a valer nas próximas verificações. A primeira requisição interna depois do login também é verificada. Requisições simultâneas da mesma identidade na instância compartilham a verificação.
 
-```json
-{ "action": "unlink", "actorId": "UUID_ADMIN", "userId": "UUID_USUARIO" }
-```
+Para bloquear uma pessoa, desabilite-a no Keycloak, remova os papéis do cliente ou encerre suas sessões no Keycloak. Quando a renovação/validação falha, as sessões locais são revogadas; não há fallback para o papel armazenado. Durante a janela de até um minuto, uma operação já autorizada pode continuar. A indisponibilidade do Keycloak também bloqueia o acesso na próxima verificação.
 
-Use o mesmo comando por stdin. A remoção funciona inclusive com o Keycloak desabilitado. Vincular e remover exigem administrador local ativo, revogam sessões locais do usuário e registram responsável e usuário na auditoria. O fluxo OIDC continua negando usuários desativados e não altera seus papéis, nomes ou e-mails locais com claims do provider.
+**Sair** encerra a sessão do Pinda Dados; o SSO global é preservado para não encerrar outros sistemas. Para encerrar o acesso institucional, use a gestão de sessões do Keycloak. Backchannel logout individual por dispositivo não está implementado nesta etapa. As sessões locais continuam limitadas a oito horas, além das restrições do provedor.
 
-O callback carrega authorization code e state na URL. O modelo Nginx desabilita logs brutos especificamente nesse endpoint; o diagnóstico fica nos eventos sanitizados da aplicação. Aplique a mesma política em proxies e monitoramento externos e não habilite logs de debug com tokens/corpos das requisições.
+## Diagnóstico
 
-## Sessões, saída e limites desta etapa
+Se ocorrer `unable_to_get_user_info`, confira primeiro se há um client role reconhecido e se o mapper o envia no ID token, no client ID correto. Confira também issuer, assinatura, nonce e configuração TLS. O Pinda Dados não envia nem exige confirmação de e-mail; uma tela de Verify Email é política do próprio Keycloak.
 
-A assinatura do ID token é verificada pelo SDK usando JWKS do discovery; são verificados audience, issuer e nonce. A aplicação ainda confere o issuer configurado e o vínculo com a conta local ativa. Dados de e-mail do Keycloak são ignorados para autenticação; campos exigidos internamente pelo SDK usam o cadastro local já vinculado, sem associação por e-mail. Tokens OAuth persistidos são criptografados pelo Better Auth com `BETTER_AUTH_SECRET`; mantenha esse segredo protegido e estável. State e PKCE são gerenciados pelo SDK, sem implementação criptográfica própria.
+O callback contém code e state; não registre sua URL bruta no proxy nem habilite logs com tokens. A auditoria registra provisionamento/sincronização e sessões sem armazenar as claims completas em logs.
 
-O Keycloak é a única forma de login. A página pública apresenta a plataforma e um único botão “Login”, que inicia o fluxo institucional. Login por e-mail/senha, cadastro público e troca ou recuperação de senha local não são expostos. A configuração `emailAndPassword` do SDK também permanece desabilitada, além do bloqueio dos endpoints no controller.
-
-Com `KEYCLOAK_ENABLED=false`, o botão fica desabilitado e a tela informa indisponibilidade; não há acesso alternativo por senha. Configure e vincule pelo menos um administrador antes de usar a instalação. “Minha conta” orienta que senha e recuperação são gerenciadas pelo acesso institucional. Falhas são apresentadas em português sem reproduzir mensagens do provider.
-
-**Sair encerra e revoga a sessão do Pinda Dados.** Nesta etapa a sessão SSO global do Keycloak é preservada, evitando encerrar outros sistemas institucionais. Entrar novamente pode reutilizar a sessão já aberta no Keycloak. Backchannel logout, sincronização de grupos/papéis e revogação remota imediata não estão implementados.
-
-Desabilitar uma conta apenas no Keycloak impede novos logins conforme a política do provider, mas não elimina automaticamente sessões locais já emitidas. Para interrupção imediata no Pinda Dados, desative o usuário na administração local. As sessões locais mantêm o prazo existente de oito horas.
+Para HTTP temporário em desenvolvimento, `KEYCLOAK_ALLOW_INSECURE_HTTP=true` exige `COMPOSE_PROFILES=development` e `APP_URL` HTTP em loopback; sem Compose, exige `NODE_ENV=development`. Produção permanece exigindo HTTPS.
 
 ## Validação
 
-`bun test` cobre configuração, identificação por realm/subject e entrada segura. O teste de fluxo assinado exige `KEYCLOAK_TEST_DATABASE_URL` apontando para PostgreSQL local isolado com sufixo `_test`:
+`bun test` cobre seleção de papéis e identidade. O fluxo OIDC assinado exige PostgreSQL local isolado (`KEYCLOAK_TEST_DATABASE_URL` com sufixo `_test`) e usa um provedor fictício: provisionamento automático, ausência de e-mail, separação por identidade, atualização de papéis, revogação e rejeição de tokens inválidos.
 
-```sh
-bun test --timeout 30000 tests/keycloak-flow.test.ts
-```
-
-O teste utiliza um provider fictício com tokens RSA assinados e JWKS localmente simulados, sem conexão a Keycloak real. Verifica PKCE, vínculo explícito, permissões preservadas, tokens criptografados, replay, nonce, issuer, audience, expiração, acesso com e-mail não verificado, ausente ou diferente e bloqueio de usuários não autorizados/desativados. A CI executa esse teste no mesmo PostgreSQL efêmero reservado ao job de navegador, antes do Playwright.
-
-A homologação com o realm real ainda deve confirmar login, conta sem vínculo, conta desativada, recuperação pelo Keycloak, logout e URLs de retorno. Nenhuma instância ou cliente Keycloak é criado automaticamente pela aplicação.
-
-Referências: [Better Auth Generic OAuth](https://better-auth.com/docs/plugins/generic-oauth) e [Keycloak OpenID Connect](https://www.keycloak.org/securing-apps/oidc-layers).
-
-O Pinda Dados não envia nem solicita confirmação de e-mail. Se a própria tela do Keycloak continuar exigindo essa ação, revise no Keycloak a configuração do realm e as ações obrigatórias do usuário (`Verify Email`); essa política do provedor não é alterada pela aplicação.
+Referências: [Keycloak OIDC](https://www.keycloak.org/securing-apps/oidc-layers), [client roles e mappers](https://www.keycloak.org/docs/latest/server_admin/index.html), [Better Auth Generic OAuth](https://better-auth.com/docs/plugins/generic-oauth).

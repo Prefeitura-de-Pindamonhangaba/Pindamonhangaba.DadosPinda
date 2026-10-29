@@ -5,7 +5,6 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { eq } from "drizzle-orm";
 import { createUserRepository } from "../src/modules/users/models/user-repository";
 import { provisionUser } from "../src/modules/users/services/provision-user-service";
-import { manageUser } from "../src/modules/users/services/manage-user-service";
 import {
   account,
   user,
@@ -198,9 +197,14 @@ test("sessão expirada e desativação revogam acesso", async ({ request }) => {
     .set({ expiresAt: new Date(0) })
     .where(eq(session.userId, userId));
   expect((await request.get("/", { maxRedirects: 0 })).status()).toBe(307);
-  await signInTestUser(request, userId);
-  await manageUser(createUserRepository(db), { action: "disable", email });
+  const subject = `disabled-${crypto.randomUUID()}`;
+  const disabledUserId = await signInTestUser(request, subject);
+  await request.post("http://127.0.0.1:3102/test-disable", {
+    data: { subject },
+  });
   expect((await request.get("/", { maxRedirects: 0 })).status()).toBe(307);
+  await db.delete(auditEvent).where(eq(auditEvent.userId, disabledUserId));
+  await db.delete(user).where(eq(user.id, disabledUserId));
 });
 
 test("limita os inícios de SSO por IP", async ({ request }) => {
