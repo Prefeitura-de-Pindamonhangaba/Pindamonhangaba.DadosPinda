@@ -70,7 +70,9 @@ export function LoginView({
               {error ||
                 (!keycloakEnabled
                   ? "O acesso institucional está indisponível. Entre em contato com o DSI."
-                  : "Acesso institucional não autorizado ou indisponível. Entre em contato com o DSI.")}
+                  : search.get("error") === "unable_to_get_user_info"
+                    ? "Acesso institucional não autorizado. Solicite ao DSI a conferência dos papéis e da configuração do cliente no Keycloak."
+                    : "Acesso institucional não autorizado ou indisponível. Entre em contato com o DSI.")}
             </p>
           )}
         </section>

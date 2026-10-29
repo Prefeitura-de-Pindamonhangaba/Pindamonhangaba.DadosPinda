@@ -1,19 +1,12 @@
 import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAuth } from "@/shared/lib/auth/server";
+import { getIdentityService } from "@/shared/lib/auth/server";
 import { canAccess } from "@/modules/auth/services/access-service";
 import type { Permission } from "@/modules/auth/permissions";
 
 export async function getPrincipal(requestHeaders: Headers) {
-  const session = await getAuth().api.getSession({ headers: requestHeaders });
-  if (!session) return null;
-  return {
-    id: session.user.id,
-    name: session.user.name,
-    role: session.user.role,
-    enabled: session.user.enabled,
-  };
+  return getIdentityService()?.getPrincipal(requestHeaders) ?? null;
 }
 
 export async function requirePageAccess(permission: Permission = "panel:read") {

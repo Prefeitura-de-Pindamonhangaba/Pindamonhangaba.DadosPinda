@@ -61,12 +61,15 @@ export function createAdminUserRepository(database: PostgresJsDatabase) {
         .select({
           id: user.id,
           name: user.name,
-          email: user.email,
           role: user.role,
           enabled: user.enabled,
           createdAt: user.createdAt,
         })
         .from(user)
+        .innerJoin(
+          account,
+          and(eq(account.userId, user.id), eq(account.providerId, "keycloak")),
+        )
         .orderBy(desc(user.createdAt))
         .limit(500);
     },

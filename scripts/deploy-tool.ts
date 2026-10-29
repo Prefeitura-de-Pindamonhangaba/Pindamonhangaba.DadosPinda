@@ -1,13 +1,6 @@
 import { resolveDeployment } from "../src/shared/lib/deployment/config";
 
-const allowed = [
-  "db:migrate",
-  "users:create",
-  "users:keycloak",
-  "users:manage",
-  "cache:purge",
-  "references:seed",
-];
+const allowed = ["db:migrate", "cache:purge", "references:seed"];
 try {
   const [command, ...args] = Bun.argv.slice(2);
   if (!allowed.includes(command))

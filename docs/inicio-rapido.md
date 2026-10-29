@@ -4,13 +4,10 @@ Requisito: Docker com Docker Compose. Não é necessário instalar Bun, Node.js 
 
 Copie `.env.example` para `.env`, mantenha `COMPOSE_PROFILES=development` e preencha:
 
-| Variável                 | Valor                                                  |
-| ------------------------ | ------------------------------------------------------ |
-| `POSTGRES_PASSWORD`      | Senha exclusiva do banco local, sem codificação manual |
-| `BETTER_AUTH_SECRET`     | Segredo aleatório de pelo menos 32 caracteres          |
-| `INITIAL_ADMIN_NAME`     | Nome do responsável                                    |
-| `INITIAL_ADMIN_EMAIL`    | E-mail da primeira conta                               |
-| `INITIAL_ADMIN_PASSWORD` | Senha exclusiva de 12 a 128 caracteres                 |
+| Variável             | Valor                                                  |
+| -------------------- | ------------------------------------------------------ |
+| `POSTGRES_PASSWORD`  | Senha exclusiva do banco local, sem codificação manual |
+| `BETTER_AUTH_SECRET` | Segredo aleatório de pelo menos 32 caracteres          |
 
 Mantenha `APP_URL=http://localhost:3000` e `APP_PORT=3000`. Execute:
 
@@ -18,15 +15,15 @@ Mantenha `APP_URL=http://localhost:3000` e `APP_PORT=3000`. Execute:
 docker compose up --build -d
 ```
 
-Abra http://localhost:3000. O Compose cria o PostgreSQL local, aguarda a conexão, aplica migrações e cria a conta inicial. `DATABASE_URL` é ignorada em desenvolvimento via Docker. Nas próximas subidas, contas e senhas são preservadas; alterar a senha inicial no `.env` não redefine contas existentes.
+Abra http://localhost:3000. O Compose cria o PostgreSQL local, aguarda a conexão, aplica migrações; contas são criadas automaticamente no primeiro login autorizado pelo Keycloak. `DATABASE_URL` é ignorada em desenvolvimento via Docker. Nas próximas subidas, os registros existentes são preservados.
 
 Para outra porta, ajuste `APP_PORT` e a porta de `APP_URL` juntos, sem editar o Compose.
 
 ## Login institucional
 
-O Keycloak é a única forma de login. Configure `KEYCLOAK_ENABLED=true`, `KEYCLOAK_ISSUER`, `KEYCLOAK_CLIENT_ID` e `KEYCLOAK_CLIENT_SECRET` no `.env`, com o cliente e o callback correspondentes a `APP_URL`. Vincule a conta inicial ao `sub` do administrador conforme [Keycloak](keycloak.md#provisionamento-e-autorização). Essa vinculação explícita impede que a coincidência de e-mail conceda acesso.
+O Keycloak é a única forma de login. Configure `KEYCLOAK_ENABLED=true`, `KEYCLOAK_ISSUER`, `KEYCLOAK_CLIENT_ID` e `KEYCLOAK_CLIENT_SECRET` no `.env`, com o cliente e o callback correspondentes a `APP_URL`. No Keycloak, crie os client roles `viewer`, `operator` e `admin`, envie-os no ID token e atribua o papel apropriado aos usuários conforme [Keycloak](keycloak.md). Para o primeiro administrador, atribua `admin` no cliente e faça login. Não é necessário cadastro, senha inicial ou comando de vínculo local.
 
-A senha inicial ainda é exigida pelo provisionamento compatível com instalações anteriores, mas não permite login. Não use a senha institucional nesse campo. Senhas de acesso e recuperação são gerenciadas no Keycloak. Com Keycloak desabilitado, a apresentação exibe indisponibilidade e não permite autenticação.
+Com Keycloak desabilitado, a apresentação exibe indisponibilidade e não permite autenticação.
 
 ## Conferir ou reiniciar
 
@@ -41,7 +38,7 @@ O serviço `init` deve terminar com código zero. Se falhar, seus logs indicam o
 
 ## Produção
 
-Altere o seletor para `COMPOSE_PROFILES=production`, informe `DATABASE_URL` do servidor externo e configure `APP_URL` HTTPS. O comando de subida permanece igual e o banco local não é criado. Migrações e primeira conta são preparadas explicitamente antes do deploy; veja [operação](operacao.md). Utilize bancos e segredos diferentes por ambiente.
+Altere o seletor para `COMPOSE_PROFILES=production`, informe `DATABASE_URL` do servidor externo e configure `APP_URL` HTTPS. O comando de subida permanece igual e o banco local não é criado. As migrações são preparadas explicitamente antes do deploy, e os acessos são definidos no Keycloak; veja [operação](operacao.md). Utilize bancos e segredos diferentes por ambiente.
 
 ## Infoconv e segredos
 

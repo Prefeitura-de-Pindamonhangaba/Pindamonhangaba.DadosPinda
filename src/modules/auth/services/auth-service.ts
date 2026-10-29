@@ -1,4 +1,5 @@
-import { z } from "zod";
+import { parseKeycloakIdentity } from "./keycloak-identity";
+import { createKeycloakIdentityRepository } from "../models/keycloak-identity-repository";
 import { genericOAuth, keycloak } from "better-auth/plugins/generic-oauth";
 import { keycloakAccountId } from "./keycloak-config";
 import { betterAuth } from "better-auth";
@@ -16,6 +17,7 @@ export function createAuthService(
 ) {
   const users = createUserRepository(database);
   const audit = createAuditRepository(database);
+  const identities = createKeycloakIdentityRepository(database);
   return betterAuth({
     appName: "Pinda Dados",
     baseURL: env.APP_URL,
@@ -52,27 +54,36 @@ export function createAuthService(
                 getUserInfo: async (tokens) => {
                   if (!tokens.idToken || !env.keycloak.enabled) return null;
                   // O SDK valida assinatura, issuer, audience e nonce antes desta callback.
-                  const profile = z
-                    .object({
-                      iss: z.literal(env.keycloak.issuer),
-                      sub: z.string(),
-                    })
-                    .passthrough()
-                    .safeParse(
-                      JSON.parse(
-                        Buffer.from(
-                          tokens.idToken.split(".")[1],
-                          "base64url",
-                        ).toString("utf8"),
-                      ),
-                    );
-                  if (!profile.success) return null;
-                  const local = await users.findKeycloakProfile(
-                    keycloakAccountId(env.keycloak.issuer, profile.data.sub),
+                  const raw: unknown = JSON.parse(
+                    Buffer.from(
+                      tokens.idToken.split(".")[1],
+                      "base64url",
+                    ).toString("utf8"),
                   );
-                  if (!local) return null;
-                  // Campos de compatibilidade do SDK vêm da conta já vinculada, nunca do e-mail do IdP.
-                  return { ...profile.data, id: profile.data.sub, ...local };
+                  const identity = parseKeycloakIdentity(
+                    raw,
+                    env.keycloak.issuer,
+                    env.keycloak.clientId,
+                  );
+                  if (!identity) {
+                    console.error(
+                      JSON.stringify({
+                        event: "auth.keycloak_access_denied",
+                        reason: "invalid_identity_or_client_roles",
+                      }),
+                    );
+                    return null;
+                  }
+                  const local = await identities.synchronize(identity);
+                  return {
+                    iss: env.keycloak.issuer,
+                    sub: identity.subject,
+                    pindaRole: identity.role,
+                    id: identity.subject,
+                    name: local.name,
+                    email: local.email,
+                    emailVerified: local.emailVerified,
+                  };
                 },
                 accountSubject: ({ profile }) =>
                   keycloakAccountId(
@@ -149,13 +160,6 @@ export function createAuthService(
         delete: {
           after: async (data) => {
             await audit.record(data.userId, "session.revoked");
-          },
-        },
-      },
-      account: {
-        update: {
-          after: async (data) => {
-            await audit.record(data.userId, "user.credentials_updated");
           },
         },
       },

@@ -52,7 +52,7 @@ Verifique em **Settings → Actions → General** se Actions e as actions oficia
 1. Mescle a PR da esteira e confira a CI da `main`.
 2. Mantenha `PRODUCTION_DEPLOY_ENABLED=false` e execute manualmente `Produção` na `main` para publicar as imagens.
 3. Na pasta provisionada do servidor, coloque os arquivos `compose.yml` e `compose.release.yml` da mesma revisão e um arquivo privado de referências `images.env` contendo `APP_IMAGE=ghcr.io/...@sha256:...` e `TOOLS_IMAGE=ghcr.io/...@sha256:...`. Os digests aparecem no resumo e nos steps de build/publicação do workflow; os nomes das tags incluem `sha-COMMIT` e `tools-sha-COMMIT`.
-4. Autentique o operador no GHCR quando o package for privado. Em seguida revise/aplique migrações e crie o primeiro administrador conforme [operação](operacao.md), usando os comandos abaixo com imagens publicadas.
+4. Autentique o operador no GHCR quando o package for privado. Em seguida revise/aplique migrações e defina o primeiro administrador no Keycloak conforme [operação](operacao.md), usando os comandos abaixo com imagens publicadas.
 5. Confirme proxy TLS, DNS, conectividade, backup e certificados. Habilite `PRODUCTION_DEPLOY_ENABLED=true` e execute novamente `Produção` na `main`.
 
 Na pasta do servidor, com `.env`, `images.env` e os dois arquivos Compose:
@@ -60,8 +60,6 @@ Na pasta do servidor, com `.env`, `images.env` e os dois arquivos Compose:
 ```sh
 docker compose --env-file .env --env-file images.env -f compose.yml -f compose.release.yml pull app init tools
 docker compose --env-file .env --env-file images.env -f compose.yml -f compose.release.yml run --rm tools db:migrate
-# Envie o JSON da conta por stdin, sem senha nos argumentos:
-# docker compose --env-file .env --env-file images.env -f compose.yml -f compose.release.yml run --rm -T tools users:create
 docker compose --env-file .env --env-file images.env -f compose.yml -f compose.release.yml run --rm init
 ```
 

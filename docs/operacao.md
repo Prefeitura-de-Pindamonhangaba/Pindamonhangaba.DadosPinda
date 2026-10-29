@@ -4,10 +4,10 @@
 
 Configure `COMPOSE_PROFILES` no `.env` com **um único valor**:
 
-| Valor         | Banco                                                    | Inicialização                                                                   |
-| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `development` | PostgreSQL local criado pelo Compose, sem publicar porta | Aguarda o banco, aplica migrações e cria o primeiro administrador               |
-| `production`  | Servidor externo informado em `DATABASE_URL`             | Verifica configuração, conexão, migrações e administrador; não modifica o banco |
+| Valor         | Banco                                                    | Inicialização                                                   |
+| ------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| `development` | PostgreSQL local criado pelo Compose, sem publicar porta | Aguarda o banco, aplica migrações; usuários vêm do Keycloak     |
+| `production`  | Servidor externo informado em `DATABASE_URL`             | Verifica configuração, conexão, migrações; não modifica o banco |
 
 O comando de subida é o mesmo:
 
@@ -35,7 +35,7 @@ Medições indicativas no ambiente de desenvolvimento (Docker Linux amd64, mesma
 
 Esses valores não garantem o tempo de outra máquina. A primeira execução ou uma troca de dependências ainda precisa baixar pacotes: durante o diagnóstico, uma instalação sem cache levou cerca de 110 segundos apenas nessa etapa. O cache passa a beneficiar as próximas execuções no mesmo builder. Caches de diretórios não são automaticamente compartilhados entre máquinas.
 
-O health check verifica disponibilidade a cada cinco segundos, evitando esperar até trinta segundos para o proxy reconhecer que o app já iniciou. Configuração, certificado, banco, migrações e administrador continuam sendo verificados; produção continua sem aplicar migrações automaticamente.
+O health check verifica disponibilidade a cada cinco segundos, evitando esperar até trinta segundos para o proxy reconhecer que o app já iniciou. Configuração, certificado, banco e migrações continuam sendo verificados; produção continua sem aplicar migrações automaticamente.
 
 Para separar o tempo de compilação do tempo de inicialização:
 
@@ -51,7 +51,7 @@ Referências: [Next.js standalone](https://nextjs.org/docs/app/api-reference/con
 
 ## Desenvolvimento
 
-Copie `.env.example` para `.env`, mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` e `INITIAL_ADMIN_*`. Configure `APP_URL=http://localhost:3000`. `DATABASE_URL` é ignorada nesse modo Docker, evitando conexão acidental a um banco externo. Usuário, senha e nome do banco local são codificados automaticamente para a URL de conexão; preencha os valores brutos.
+Copie `.env.example` para `.env`, mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` e as variáveis Keycloak. Configure `APP_URL=http://localhost:3000`. `DATABASE_URL` é ignorada nesse modo Docker, evitando conexão acidental a um banco externo. Usuário, senha e nome do banco local são codificados automaticamente para a URL de conexão; preencha os valores brutos.
 
 O serviço `init` aguarda o banco por tempo limitado. Na primeira subida prepara o schema e a conta; nas demais preserva os usuários e suas senhas. Veja [início rápido](inicio-rapido.md).
 
@@ -66,7 +66,7 @@ DATABASE_URL=postgresql://USUARIO:SENHA_CODIFICADA@SERVIDOR:5432/BANCO?sslmode=r
 BETTER_AUTH_SECRET=SEU_SEGREDO_ALEATORIO_DE_PELO_MENOS_32_CARACTERES
 ```
 
-Substitua todos os exemplos. A senha na connection string deve ser codificada percentualmente quando necessário. Preserve as opções TLS exigidas pelo servidor; a aplicação não desabilita a verificação TLS nem remove parâmetros da connection string. `POSTGRES_*` e `INITIAL_ADMIN_*` não são necessários em produção. `localhost` dentro do container é a própria aplicação e não será aceito como banco externo.
+Substitua todos os exemplos. A senha na connection string deve ser codificada percentualmente quando necessário. Preserve as opções TLS exigidas pelo servidor; a aplicação não desabilita a verificação TLS nem remove parâmetros da connection string. `POSTGRES_*` não é necessário em produção; `INITIAL_ADMIN_*` deixou de ser utilizado. `localhost` dentro do container é a própria aplicação e não será aceito como banco externo.
 
 Antes da primeira publicação, crie o banco e as permissões no servidor PostgreSQL. Faça backup antes de mudanças relevantes, revise o SQL das migrações e aplique explicitamente:
 
@@ -75,20 +75,7 @@ docker compose build tools
 docker compose run --rm tools db:migrate
 ```
 
-Crie a primeira conta administradora enviando JSON pela entrada padrão. Exemplo PowerShell, sem senha no histórico ou nos argumentos:
-
-```powershell
-$credential = Get-Credential -Message 'E-mail e senha da primeira conta administradora'
-@{
-  name = 'Administrador responsável'
-  email = $credential.UserName
-  password = $credential.GetNetworkCredential().Password
-  role = 'admin'
-} | ConvertTo-Json -Compress | docker compose run --rm -T tools users:create
-Remove-Variable credential
-```
-
-Em Bash, solicite a senha sem eco e produza o JSON com uma ferramenta local de sua confiança; envie-o a `docker compose run --rm -T tools users:create`. O formato é `{ "name": "...", "email": "...", "password": "...", "role": "admin" }`. Não grave senhas em arquivos versionados.
+No Keycloak, atribua o client role `admin` ao responsável, conforme [gestão de acessos](keycloak.md). A conta local será provisionada automaticamente no primeiro login. Não existe senha inicial nem comando de vínculo local.
 
 Depois execute o comando normal de subida. Para verificar sem iniciar a aplicação:
 
@@ -97,7 +84,7 @@ docker compose build init
 docker compose run --rm init
 ```
 
-A verificação termina com código diferente de zero e orientação de correção quando faltar configuração, conexão, migração ou administrador. Quando Infoconv estiver habilitado, também verifica variáveis, chaves independentes e leitura/formato dos certificados. **Não faz consultas ao SERPRO.** Banco sem schema, permissões insuficientes e divergência de migrações exigem intervenção do operador; não há migração automática em produção.
+A verificação termina com código diferente de zero e orientação de correção quando faltar configuração, conexão, ou migração. Quando Infoconv estiver habilitado, também verifica variáveis, chaves independentes e leitura/formato dos certificados. **Não faz consultas ao SERPRO.** Banco sem schema, permissões insuficientes e divergência de migrações exigem intervenção do operador; não há migração automática em produção.
 
 ## Rede, publicação e segredos
 

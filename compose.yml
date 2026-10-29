@@ -72,9 +72,6 @@ services:
     entrypoint: [bun, runtime/bootstrap.js]
     environment:
       <<: *deployment
-      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Administrador}
-      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
-      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
     volumes: *certificates
     networks: [frontend, database]
   tools:

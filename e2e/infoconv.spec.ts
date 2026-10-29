@@ -70,7 +70,7 @@ const payload = (document = cachedDocument) => ({
 });
 
 async function login(request: APIRequestContext, role = "operator") {
-  await signInTestUser(request, users[role].id);
+  await signInTestUser(request, users[role].id, role);
 }
 
 test.beforeAll(async () => {
@@ -526,34 +526,17 @@ test("administração de servidores e domínios registra alterações e respeita
   request,
 }) => {
   await login(request, "admin");
-  const managedEmail = `e2e-infoconv-${runId}-managed@example.org`;
-  const created = await request.post("/api/admin/users", {
-    headers: { origin },
-    data: {
-      name: "Servidor importado fictício",
-      email: managedEmail,
-      role: "operator",
-    },
-  });
-  expect(created.status()).toBe(201);
-  const target = await created.json();
-  expect(
-    (
-      await request.patch("/api/admin/users", {
-        headers: { origin },
-        data: {
-          id: target.id,
-          name: "Servidor alterado fictício",
-          email: managedEmail,
-          role: "viewer",
-          enabled: false,
-        },
-      })
-    ).status(),
-  ).toBe(200);
-  const response = await request.get("/api/admin/users?format=csv");
-  expect(response.status()).toBe(200);
-  expect(await response.text()).not.toContain(password);
+  for (const method of ["post", "patch"] as const) {
+    expect(
+      (
+        await request[method]("/api/admin/users", {
+          headers: { origin },
+          data: {},
+        })
+      ).status(),
+    ).toBe(405);
+  }
+  expect((await request.get("/api/admin/users")).status()).toBe(200);
   expect(
     (
       await request.post("/api/admin/references", {
@@ -593,12 +576,7 @@ test("administração de servidores e domínios registra alterações e respeita
     .from(auditEvent)
     .where(eq(auditEvent.actorId, users.admin.id));
   expect(rows.map((row) => row.action)).toEqual(
-    expect.arrayContaining([
-      "user.provisioned",
-      "user.access_updated",
-      "reference.save-type",
-      "reference.save-value",
-    ]),
+    expect.arrayContaining(["reference.save-type", "reference.save-value"]),
   );
 });
 

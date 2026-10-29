@@ -27,17 +27,17 @@ A execução local de login, contas e administração não depende de contratar 
 
 ## Executar localmente
 
-Requisito: **Docker com Compose**. Copie `.env.example` para `.env` e mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (segredo aleatório de pelo menos 32 caracteres), `INITIAL_ADMIN_EMAIL` e `INITIAL_ADMIN_PASSWORD` (12 a 128 caracteres). O modelo contém apenas configurações públicas, sem credenciais utilizáveis.
+Requisito: **Docker com Compose**. Copie `.env.example` para `.env` e mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` (segredo aleatório de pelo menos 32 caracteres) e as variáveis do Keycloak. O modelo contém apenas configurações públicas, sem credenciais utilizáveis.
 
 ```sh
 docker compose up --build -d
 ```
 
-Abra http://localhost:3000. Configure o Keycloak no `.env` e vincule a conta inicial conforme [login institucional](docs/keycloak.md). A única forma de login é pelo Keycloak; enquanto estiver desabilitado, a apresentação permanece acessível e o botão Login fica indisponível. O Compose inicia o banco, aplica migrações locais e cria a primeira conta administradora. Bancos existentes preservam contas e senhas. Não é necessário instalar Bun ou PostgreSQL na máquina. Consulte o [início rápido](docs/inicio-rapido.md).
+Abra http://localhost:3000. Configure o Keycloak no `.env` e atribua os client roles conforme [login institucional](docs/keycloak.md). A única forma de login é pelo Keycloak; enquanto estiver desabilitado, a apresentação permanece acessível e o botão Login fica indisponível. O Compose inicia o banco, aplica migrações locais; os usuários são provisionados automaticamente pelo login autorizado no Keycloak. Bancos existentes preservam registros históricos. Não é necessário instalar Bun ou PostgreSQL na máquina. Consulte o [início rápido](docs/inicio-rapido.md).
 
 Mantenha `INFOCONV_ENABLED=false` até configurar a integração. O `.env` e certificados são ignorados pelo Git e excluídos do build; nunca compartilhe esses arquivos.
 
-Para produção, altere somente o seletor para `COMPOSE_PROFILES=production` e forneça `DATABASE_URL` do banco externo e `APP_URL` HTTPS. O comando de subida continua igual; o PostgreSQL local não é criado. O pré-deploy informa configurações ausentes, falhas de conexão, migrações pendentes e falta de administrador, impedindo o início da aplicação. Prepare migrações e a primeira conta explicitamente conforme [operação](docs/operacao.md).
+Para produção, altere somente o seletor para `COMPOSE_PROFILES=production` e forneça `DATABASE_URL` do banco externo e `APP_URL` HTTPS. O comando de subida continua igual; o PostgreSQL local não é criado. O pré-deploy informa configurações ausentes, falhas de conexão e migrações pendentes, impedindo o início da aplicação. Prepare as migrações e atribua o papel do primeiro administrador no Keycloak conforme [operação](docs/operacao.md).
 
 ## Configurar a integração e publicar
 
