@@ -17,6 +17,38 @@ docker compose up --build -d
 
 `NODE_ENV` não seleciona o ambiente Docker: ambos executam o build otimizado com Bun. O seletor controla a topologia e a política de segurança. Em produção, HTTP é recusado mesmo se `ALLOW_LOCAL_HTTP` legado estiver habilitado.
 
+## Build e tempo de subida
+
+O comando permanece `docker compose up --build -d`. O Docker reaproveita as dependências do Bun e o cache de compilação do Next.js. Documentação, testes e arquivos locais não invalidam o build da aplicação. Não use `--no-cache` nem limpe o cache do builder nas atualizações rotineiras.
+
+A aplicação usa a saída standalone do Next.js, executada com Bun. A imagem final contém apenas os arquivos rastreados, assets públicos e inicializador compilado. `init` usa uma imagem pequena com o bootstrap compilado e migrações; `tools` continua disponível com as ferramentas completas. A imagem `tooling` também contém `runtime/bootstrap.js`, mantendo a compatibilidade do overlay de release e do GitHub Actions.
+
+`NEXT_BUILD_CPUS=2` limita os processos de geração de páginas no build Docker, reduzindo a pressão de memória em VMs pequenas. Aceita valores de 1 a 32 no `.env`; isso não altera a quantidade de processos de atendimento da aplicação nem o seletor de ambiente. O build local com Bun mantém o comportamento padrão do Next.js se a variável não estiver definida.
+
+Medições indicativas no ambiente de desenvolvimento (Docker Linux amd64, mesma máquina):
+
+| Verificação                                    | Antes      | Depois   |
+| ---------------------------------------------- | ---------- | -------- |
+| Build com dependências em cache                | 76,9 s     | 19,2 s   |
+| Tamanho da imagem da aplicação, sem compressão | 366,8 MB   | 127,6 MB |
+| `up --build --wait` com cache disponível       | não medido | 17–21 s  |
+
+Esses valores não garantem o tempo de outra máquina. A primeira execução ou uma troca de dependências ainda precisa baixar pacotes: durante o diagnóstico, uma instalação sem cache levou cerca de 110 segundos apenas nessa etapa. O cache passa a beneficiar as próximas execuções no mesmo builder. Caches de diretórios não são automaticamente compartilhados entre máquinas.
+
+O health check verifica disponibilidade a cada cinco segundos, evitando esperar até trinta segundos para o proxy reconhecer que o app já iniciou. Configuração, certificado, banco, migrações e administrador continuam sendo verificados; produção continua sem aplicar migrações automaticamente.
+
+Para separar o tempo de compilação do tempo de inicialização:
+
+```sh
+docker compose --progress plain build
+docker compose up -d --wait
+docker compose logs init
+```
+
+Não compartilhe `.env`, certificados nem a saída de `docker compose config`, que contém segredos interpolados. Para produção, o [overlay de release](github-actions.md) usa imagens já compiladas no GitHub Actions e evita compilar no servidor.
+
+Referências: [Next.js standalone](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) e [cache de build do Docker](https://docs.docker.com/build/cache/optimize/).
+
 ## Desenvolvimento
 
 Copie `.env.example` para `.env`, mantenha `COMPOSE_PROFILES=development` e preencha `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET` e `INITIAL_ADMIN_*`. Configure `APP_URL=http://localhost:3000`. `DATABASE_URL` é ignorada nesse modo Docker, evitando conexão acidental a um banco externo. Usuário, senha e nome do banco local são codificados automaticamente para a URL de conexão; preencha os valores brutos.

@@ -37,7 +37,10 @@ x-certificates: &certificates
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_BUILD_CPUS: ${NEXT_BUILD_CPUS:-2}
     restart: unless-stopped
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
@@ -56,17 +59,17 @@ services:
           -e,
           "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
-      interval: 30s
+      interval: 5s
       timeout: 5s
       start_period: 30s
       retries: 3
   init:
     build:
       context: .
-      target: tooling
+      target: bootstrap
     user: bun
     restart: "no"
-    entrypoint: [bun, scripts/bootstrap.ts]
+    entrypoint: [bun, runtime/bootstrap.js]
     environment:
       <<: *deployment
       INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Administrador}
