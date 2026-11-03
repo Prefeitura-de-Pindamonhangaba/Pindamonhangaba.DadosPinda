@@ -595,3 +595,22 @@ test("troca de senha local permanece bloqueada mesmo com sessão válida", async
   expect(changed.status()).toBe(404);
   expect(await changed.text()).not.toContain(password);
 });
+
+test("operador não acessa auditoria e usa consultas sem detalhes de cache", async ({
+  page,
+}) => {
+  await login(page.request, "operator");
+  await page.goto("/consultations");
+  await expect(page.getByRole("link", { name: "Minha conta" })).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Auditoria de consultas" }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/cache|7 dias|base local/i)).toHaveCount(0);
+  expect((await page.request.get("/api/consultations/audit")).status()).toBe(
+    403,
+  );
+  await page.goto("/consultations/audit");
+  await expect(
+    page.getByRole("heading", { name: "Auditoria de consultas" }),
+  ).toHaveCount(0);
+});

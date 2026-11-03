@@ -155,10 +155,7 @@ test("SSO assinado cria sessão; saída pelo navegador revoga e audita", async (
   await expect(
     page.getByText("Servidor de teste", { exact: true }),
   ).toBeVisible();
-  await page.goto("/account");
-  await expect(
-    page.getByRole("heading", { name: "Senha e recuperação de acesso" }),
-  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Minha conta" })).toHaveCount(0);
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
   const cookies = await context.cookies();
   const cookie = cookies.find((item) => item.name.endsWith("session_token"));

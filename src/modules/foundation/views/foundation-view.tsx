@@ -41,18 +41,20 @@ export function FoundationView({
             </p>
           )}
         </div>
-        <div>
-          <h2>Reutilização segura dos dados</h2>
-          <p>
-            Antes de solicitar novos dados ao SERPRO, o sistema procura uma
-            resposta válida na base local. As respostas ficam criptografadas por
-            até 7 dias.
-          </p>
-          <p>
-            Consultas individuais e lotes têm identificação da origem, data de
-            obtenção e finalidade registrada em auditoria.
-          </p>
-        </div>
+        {admin && (
+          <div>
+            <h2>Reutilização segura dos dados</h2>
+            <p>
+              Antes de solicitar novos dados ao SERPRO, o sistema procura uma
+              resposta válida na base local. As respostas ficam criptografadas
+              por até 7 dias.
+            </p>
+            <p>
+              Consultas individuais e lotes têm identificação da origem, data de
+              obtenção e finalidade registrada em auditoria.
+            </p>
+          </div>
+        )}
       </section>
       <aside className="privacy">
         <h2>Uso responsável da informação</h2>
