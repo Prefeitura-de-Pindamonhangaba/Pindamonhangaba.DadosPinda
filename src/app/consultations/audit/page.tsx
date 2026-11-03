@@ -3,7 +3,7 @@ import { hasPermission } from "@/modules/auth/permissions";
 import { PanelShell } from "@/shared/components/panel-shell";
 import { AuditView } from "@/modules/consultations/views/audit-view";
 export default async function AuditPage() {
-  const principal = await requirePageAccess("consultations:read");
+  const principal = await requirePageAccess("audit:read");
   return (
     <PanelShell
       userName={principal.name}

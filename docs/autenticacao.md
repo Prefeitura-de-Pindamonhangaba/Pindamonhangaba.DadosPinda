@@ -29,3 +29,9 @@ Não edite contas ou papéis diretamente no banco para conceder acesso. Contas a
 - Senhas, tokens, certificados e banco ficam fora do repositório. HTTPS em produção permanece obrigatório.
 
 Testes usam provedor fictício e PostgreSQL isolado. Consulte [testes](testes.md), [operação](operacao.md) e [Keycloak](keycloak.md).
+
+## Acesso às consultas
+
+A auditoria de consultas (página e API) é exclusiva do papel `admin`. Operadores continuam realizando consultas sem acesso aos registros de auditoria. A seção Minha conta foi removida; a gestão de identidade permanece no Keycloak.
+
+Detalhes de cache, retenção e atualização forçada aparecem apenas para administradores. Para os demais perfis, as telas e exportações apresentam a fonte oficial e a data de obtenção, sem informações sobre o funcionamento do cache. A reutilização automática e o registro de auditoria continuam ativos.

@@ -8,12 +8,10 @@ export async function listConsultationAudit(
   repository: ConsultationRepository,
   principal: Principal,
 ) {
-  if (!canAccess(principal, "consultations:read"))
+  if (!canAccess(principal, "audit:read"))
     throw new ConsultationError("forbidden");
   return {
-    records: await repository.listAudit(
-      canAccess(principal, "audit:read") ? undefined : principal.id,
-    ),
-    usage: canAccess(principal, "audit:read") ? await repository.usage() : [],
+    records: await repository.listAudit(),
+    usage: await repository.usage(),
   };
 }

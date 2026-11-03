@@ -1,4 +1,5 @@
 import "server-only";
+import { canAccess } from "@/modules/auth/services/access-service";
 import {
   authorizeRequest,
   privateJson,
@@ -25,13 +26,19 @@ export async function postDisclosure(request: Request) {
       parsed.data.format,
     );
     if (parsed.data.format === "print") return privateJson({ success: true });
-    return new Response(exportResultsCsv(parsed.data.results), {
-      headers: {
-        "Content-Type": "text/csv;charset=utf-8",
-        "Content-Disposition": "attachment; filename=infoconv.csv",
-        "Cache-Control": "private, no-store",
+    return new Response(
+      exportResultsCsv(
+        parsed.data.results,
+        canAccess(principal, "consultations:refresh"),
+      ),
+      {
+        headers: {
+          "Content-Type": "text/csv;charset=utf-8",
+          "Content-Disposition": "attachment; filename=infoconv.csv",
+          "Cache-Control": "private, no-store",
+        },
       },
-    });
+    );
   } catch (error) {
     if (error instanceof ConsultationError)
       return privateJson(

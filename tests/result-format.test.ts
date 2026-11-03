@@ -161,3 +161,25 @@ test("ocupações preservam a validade informada pela Receita em alterações hi
     "Terapeuta ocupacional (a partir do ano-calendário 2024)",
   );
 });
+
+test("CSV comum omite cache e administrador pode consultar os detalhes", () => {
+  const result: ConsultationResult = {
+    id: crypto.randomUUID(),
+    batchId: crypto.randomUUID(),
+    kind: "cpf",
+    document: "11144477735",
+    status: "success",
+    origin: "cache",
+    obtainedAt: "2026-10-23T12:00:00Z",
+    expiresAt: "2026-10-30T12:00:00Z",
+    data: {},
+  };
+  const common = exportResultsCsv([result]);
+  expect(common).not.toContain("cache");
+  expect(common).not.toContain("Base local");
+  expect(common).not.toContain(result.expiresAt!);
+  expect(common).toContain("SERPRO · Infoconv");
+  const admin = exportResultsCsv([result], true);
+  expect(admin).toContain("Validade do cache");
+  expect(admin).toContain(result.expiresAt!);
+});

@@ -8,7 +8,13 @@ import {
   statusLabels,
 } from "../services/result-format";
 
-export function ResultsTable({ results }: { results: ConsultationResult[] }) {
+export function ResultsTable({
+  results,
+  showCacheDetails = false,
+}: {
+  results: ConsultationResult[];
+  showCacheDetails?: boolean;
+}) {
   return (
     <div className="results-list">
       {results.map((result) => (
@@ -23,9 +29,14 @@ export function ResultsTable({ results }: { results: ConsultationResult[] }) {
             </span>
           </div>
           <p className="result-origin">
-            {originLabels[result.origin]} · Obtido em{" "}
-            {new Date(result.obtainedAt).toLocaleString("pt-BR")}
-            {result.expiresAt &&
+            {showCacheDetails
+              ? originLabels[result.origin]
+              : result.origin === "mock"
+                ? originLabels.mock
+                : originLabels.serpro}{" "}
+            · Obtido em {new Date(result.obtainedAt).toLocaleString("pt-BR")}
+            {showCacheDetails &&
+              result.expiresAt &&
               ` · Cache válido até ${new Date(result.expiresAt).toLocaleString("pt-BR")}`}
           </p>
           {result.message && (

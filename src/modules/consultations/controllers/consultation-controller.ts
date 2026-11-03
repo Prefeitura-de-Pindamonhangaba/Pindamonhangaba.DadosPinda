@@ -43,7 +43,7 @@ export async function postConsultation(request: Request) {
             error.code === "forbidden"
               ? "Acesso não autorizado."
               : error.code === "monthly_limit"
-                ? "Teto mensal autorizado atingido. Novas chamadas exigem liberação administrativa em Auditoria de consultas, pois há cobrança adicional. Dados válidos na base local continuam disponíveis."
+                ? "Limite de consultas atingido. Solicite ao administrador a liberação para continuar."
                 : "Limite de consultas atingido. Aguarde antes de continuar.",
         },
         error.code === "forbidden" ? 403 : 429,
@@ -55,7 +55,7 @@ export async function postConsultation(request: Request) {
 
 export async function getConsultationAudit(request: Request) {
   try {
-    const principal = await authorizeRequest(request, "consultations:read");
+    const principal = await authorizeRequest(request, "audit:read");
     return privateJson(await readConsultationAudit(principal));
   } catch (error) {
     return safeRequestError(error);

@@ -117,7 +117,10 @@ export function formatField(
     .join("; ");
 }
 
-export function exportResultsCsv(results: ConsultationResult[]) {
+export function exportResultsCsv(
+  results: ConsultationResult[],
+  showCacheDetails = false,
+) {
   const fields = Object.entries({ ...CPF_FIELDS, ...CNPJ_FIELDS });
   // Prefixo de texto impede fórmulas e preserva zeros à esquerda no Excel.
   const cell = (value: string) => `"'${value.replaceAll('"', '""')}"`;
@@ -129,7 +132,7 @@ export function exportResultsCsv(results: ConsultationResult[]) {
     "Situação",
     "Origem",
     "Obtido em",
-    "Validade do cache",
+    ...(showCacheDetails ? ["Validade do cache"] : []),
     ...fields.map(([, label]) => label),
     "Mensagem",
   ];
@@ -143,9 +146,13 @@ export function exportResultsCsv(results: ConsultationResult[]) {
         result.document,
         result.kind.toUpperCase(),
         statusLabels[result.status],
-        originLabels[result.origin],
+        showCacheDetails
+          ? originLabels[result.origin]
+          : result.origin === "mock"
+            ? originLabels.mock
+            : originLabels.serpro,
         result.obtainedAt,
-        result.expiresAt ?? "",
+        ...(showCacheDetails ? [result.expiresAt ?? ""] : []),
         ...fields.map(([key]) => formatField(result.data[key], key)),
         result.message ?? "",
       ]),

@@ -181,11 +181,13 @@ export function ConsultationView({
           <span className="eyebrow">Infoconv · SERPRO</span>
           <h1>Consultas cadastrais</h1>
           <p>
-            Consulte primeiro a base local. Novos dados são obtidos na fonte
-            oficial quando necessário.
+            Consulte dados cadastrais de pessoas físicas e jurídicas na fonte
+            oficial.
           </p>
         </div>
-        <span className="status">Cache criptografado · 7 dias</span>
+        {permissions.includes("consultations:refresh") && (
+          <span className="status">Cache criptografado · 7 dias</span>
+        )}
       </div>
       <form className="consultation-form" onSubmit={submit}>
         <fieldset disabled={pending}>
@@ -350,13 +352,18 @@ export function ConsultationView({
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
           />
-          <p>
-            {results.filter((row) => row.origin === "cache").length}{" "}
-            reutilizado(s) da base local ·{" "}
-            {results.filter((row) => row.origin === "serpro").length}{" "}
-            tentativa(s) de consulta à fonte.
-          </p>
-          <ResultsTable results={filtered} />
+          {permissions.includes("consultations:refresh") && (
+            <p>
+              {results.filter((row) => row.origin === "cache").length}{" "}
+              reutilizado(s) da base local ·{" "}
+              {results.filter((row) => row.origin === "serpro").length}{" "}
+              tentativa(s) de consulta à fonte.
+            </p>
+          )}
+          <ResultsTable
+            results={filtered}
+            showCacheDetails={permissions.includes("consultations:refresh")}
+          />
         </section>
       )}
     </>

@@ -52,3 +52,14 @@ describe("controle de acesso", () => {
     ).toThrow("Configuração de ambiente inválida: BETTER_AUTH_SECRET.");
   });
 });
+
+test("auditoria de consultas é exclusiva de administradores", () => {
+  for (const role of ["viewer", "operator", "admin"]) {
+    expect(
+      canAccess(
+        { id: "test", name: "Servidor", role, enabled: true },
+        "audit:read",
+      ),
+    ).toBe(role === "admin");
+  }
+});
